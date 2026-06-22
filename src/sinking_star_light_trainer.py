@@ -23,7 +23,7 @@ from ctypes import wintypes
 
 
 APP_NAME = "SinkingStarHero"
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.3.0"
 PROCESS_NAME = "sinking_star.exe"
 
 PICK_RVA = 0x2AEF49
@@ -52,10 +52,23 @@ PLAYER_COORD_OFFSETS = (0x00, 0x04, 0x08)
 COORD_AXES = ("x", "y", "z")
 COORD_LIMIT = 1_000_000.0
 
+ENTITY_ID = 0x100
+ENTITY_TYPE = 0x108
+ENTITY_TYPE_ID = 0x04
+ENTITY_TYPE_SIZE = 0x08
+ENTITY_TYPE_NAME = 0x18
+ENTITY_KIND_ENTITY = 7
+LEVEL_OBJECT_COUNT = 0x370
+LEVEL_OBJECT_ARRAY = 0x378
+MAX_LEVEL_OBJECT_COUNT = 20000
+OBJECT_SCOPE_ALL = "全部区域"
+OBJECT_SCOPE_RADIUS = "附近半径"
+OBJECT_RADIUS_DEFAULT = 8.0
+
 LEVEL_FREEZER_COUNT = 0x7E0
 LEVEL_FREEZER_ARRAY = 0x7E8
-FREEZER_ID = 0x100
-FREEZER_TYPE = 0x108
+FREEZER_ID = ENTITY_ID
+FREEZER_TYPE = ENTITY_TYPE
 FREEZER_OPENED = 0x338
 FREEZER_TYPE_RVA = 0x5C70C0
 FREEZER_OPEN_RADIUS = 8.0
@@ -411,6 +424,26 @@ class FreezerOpenResult:
     position: tuple[float, float, float]
 
 
+@dataclass
+class EntityTypeInfo:
+    address: int
+    type_id: int
+    type_size: int
+    name: str
+
+
+@dataclass
+class CoordinateObject:
+    address: int
+    source: str
+    index: int
+    entity_id: int
+    type_info: EntityTypeInfo
+    position: tuple[float, float, float]
+    distance: float
+    is_player: bool
+
+
 class ProcessMemory:
     def __init__(self, pid: int) -> None:
         self.pid = pid
@@ -614,6 +647,7 @@ class LightTrainerBackend:
         self.mem: ProcessMemory | None = None
         self.module: ModuleInfo | None = None
         self.hook: HookInfo | None = None
+        self.type_cache: dict[int, EntityTypeInfo] = {}
         self.last_error = ""
         self.last_attach_attempt = 0.0
 
@@ -815,6 +849,7 @@ class LightTrainerBackend:
         self.mem = None
         self.module = None
         self.hook = None
+        self.type_cache.clear()
 
     def label(self, name: str) -> int:
         if not self.hook:
@@ -858,6 +893,52 @@ class LightTrainerBackend:
         except TrainerError:
             return 0
 
+    def read_c_string(self, address: int, max_len: int = 96) -> str:
+        if not self.mem or not address:
+            return ""
+        data = bytearray()
+        for offset in range(max_len):
+            try:
+                value = self.mem.read_u8(address + offset)
+            except TrainerError:
+                break
+            if value == 0:
+                break
+            data.append(value)
+        return data.decode("ascii", errors="replace")
+
+    def entity_type_info(self, type_ptr: int) -> EntityTypeInfo:
+        if type_ptr in self.type_cache:
+            return self.type_cache[type_ptr]
+        if not self.attached or not self.mem or not self.module:
+            return EntityTypeInfo(type_ptr, 0, 0, "")
+        if not (self.module.base <= type_ptr < self.module.base + self.module.size):
+            return EntityTypeInfo(type_ptr, 0, 0, "")
+        try:
+            kind = self.mem.read_u32(type_ptr)
+            if kind != ENTITY_KIND_ENTITY:
+                return EntityTypeInfo(type_ptr, 0, 0, "")
+            type_id = self.mem.read_u32(type_ptr + ENTITY_TYPE_ID)
+            type_size = self.mem.read_u32(type_ptr + ENTITY_TYPE_SIZE)
+            name_ptr = self.mem.read_u64(type_ptr + ENTITY_TYPE_NAME)
+            name = self.read_c_string(name_ptr)
+        except TrainerError:
+            return EntityTypeInfo(type_ptr, 0, 0, "")
+        info = EntityTypeInfo(type_ptr, type_id, type_size, name)
+        self.type_cache[type_ptr] = info
+        return info
+
+    def current_level_ptr(self) -> int:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+        player = self.player_ptr()
+        if not player:
+            raise TrainerError("尚未捕获玩家实体")
+        level = self.mem.read_u64(player + PLAYER_LEVEL)
+        if not level:
+            raise TrainerError("尚未找到当前关卡")
+        return level
+
     def player_xyz(self) -> tuple[float, float, float]:
         if not self.attached or not self.mem:
             raise TrainerError("尚未连接游戏")
@@ -873,6 +954,86 @@ class LightTrainerBackend:
         if not player:
             raise TrainerError("尚未捕获玩家实体")
         self.mem.write(player, struct.pack("<fff", *values))
+
+    def coordinate_objects(self) -> list[CoordinateObject]:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+
+        player = self.player_ptr()
+        if not player:
+            raise TrainerError("尚未捕获玩家实体")
+        px, py, pz = self.player_xyz()
+        level = self.current_level_ptr()
+        count = self.mem.read_u64(level + LEVEL_OBJECT_COUNT)
+        array = self.mem.read_u64(level + LEVEL_OBJECT_ARRAY)
+        if count <= 0 or not array:
+            raise TrainerError("当前关卡没有对象列表")
+        if count > MAX_LEVEL_OBJECT_COUNT:
+            raise TrainerError(f"对象数量异常：{count}")
+
+        objects: list[CoordinateObject] = []
+        seen: set[int] = set()
+        for index in range(count):
+            try:
+                address = self.mem.read_u64(array + index * 8)
+                if not address or address in seen:
+                    continue
+                seen.add(address)
+                type_info = self.entity_type_info(self.mem.read_u64(address + ENTITY_TYPE))
+                if not type_info.name:
+                    continue
+                x, y, z = (
+                    self.mem.read_f32(address + offset) for offset in PLAYER_COORD_OFFSETS
+                )
+                if not all(math.isfinite(value) and abs(value) <= COORD_LIMIT for value in (x, y, z)):
+                    continue
+                try:
+                    entity_id = self.mem.read_u32(address + ENTITY_ID)
+                except TrainerError:
+                    entity_id = 0
+                distance = math.sqrt((x - px) * (x - px) + (y - py) * (y - py) + (z - pz) * (z - pz))
+                objects.append(
+                    CoordinateObject(
+                        address=address,
+                        source=f"+0x{LEVEL_OBJECT_COUNT:X}",
+                        index=index,
+                        entity_id=entity_id,
+                        type_info=type_info,
+                        position=(x, y, z),
+                        distance=distance,
+                        is_player=address == player,
+                    )
+                )
+            except TrainerError:
+                continue
+
+        return sorted(
+            objects,
+            key=lambda item: (
+                not item.is_player,
+                item.distance,
+                item.type_info.name.lower(),
+                item.index,
+            ),
+        )
+
+    def write_object_xyz(self, address: int, values: tuple[float, float, float]) -> None:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+        if not all(math.isfinite(value) and abs(value) <= COORD_LIMIT for value in values):
+            raise TrainerError("对象坐标超出允许范围")
+        type_info = self.entity_type_info(self.mem.read_u64(address + ENTITY_TYPE))
+        if not type_info.name:
+            raise TrainerError(f"目标不是可识别实体 0x{address:X}")
+        self.mem.write(address, struct.pack("<fff", *values))
+
+    def object_xyz(self, address: int) -> tuple[float, float, float]:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+        type_info = self.entity_type_info(self.mem.read_u64(address + ENTITY_TYPE))
+        if not type_info.name:
+            raise TrainerError(f"目标不是可识别实体 0x{address:X}")
+        return tuple(self.mem.read_f32(address + offset) for offset in PLAYER_COORD_OFFSETS)
 
     def open_nearest_freezer(self, max_distance: float = FREEZER_OPEN_RADIUS) -> FreezerOpenResult:
         if not self.attached or not self.mem or not self.module:
@@ -954,8 +1115,8 @@ class TrainerApp:
     ) -> None:
         self.root = tk.Tk()
         self.root.title(f"{APP_NAME} v{APP_VERSION}")
-        self.root.geometry("430x550")
-        self.root.minsize(430, 550)
+        self.root.geometry("920x680")
+        self.root.minsize(760, 560)
         self.root.configure(bg="#f4f5f1")
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
@@ -964,6 +1125,18 @@ class TrainerApp:
         self.coord_vars = {axis: tk.StringVar(value="0.000") for axis in COORD_AXES}
         self.coord_step_var = tk.StringVar(value="1.000")
         self.coord_spinboxes: dict[str, ttk.Spinbox] = {}
+        self.object_filter_var = tk.StringVar(value="全部")
+        self.object_scope_var = tk.StringVar(value=OBJECT_SCOPE_ALL)
+        self.object_radius_var = tk.StringVar(value=f"{OBJECT_RADIUS_DEFAULT:.3f}")
+        self.object_coord_vars = {axis: tk.StringVar(value="0.000") for axis in COORD_AXES}
+        self.object_records: list[CoordinateObject] = []
+        self.object_record_by_address: dict[int, CoordinateObject] = {}
+        self.object_tree: ttk.Treeview | None = None
+        self.object_filter_combo: ttk.Combobox | None = None
+        self.object_scope_combo: ttk.Combobox | None = None
+        self.object_radius_spinbox: ttk.Spinbox | None = None
+        self.object_status_label: ttk.Label | None = None
+        self.object_edit_label: ttk.Label | None = None
         self.debounced_hotkeys: set[str] = set()
         self.running = True
         self.debug_log_path = debug_log_path
@@ -1011,6 +1184,8 @@ class TrainerApp:
         style.map("TCheckbutton", background=[("active", "#f4f5f1")])
         style.configure("TButton", font=("Segoe UI", 9))
         style.configure("Coord.TSpinbox", font=("Segoe UI", 9))
+        style.configure("Treeview", font=("Consolas", 9), rowheight=22)
+        style.configure("Treeview.Heading", font=("Segoe UI", 9, "bold"))
 
     def _build_ui(self) -> None:
         frame = ttk.Frame(self.root, padding=(18, 16, 18, 14))
@@ -1022,8 +1197,36 @@ class TrainerApp:
         self.mod_label = ttk.Label(frame, text="修改：未开启", style="Status.TLabel")
         self.mod_label.pack(anchor="w", pady=(4, 0))
         self.player_label = ttk.Label(frame, text="玩家：等待捕获", style="Small.TLabel")
-        self.player_label.pack(anchor="w", pady=(4, 12))
+        self.player_label.pack(anchor="w", pady=(4, 2))
+        self.capture_hint_label = ttk.Label(
+            frame,
+            text="提示：移动一下主角，工具才能捕获主角地址。",
+            style="Small.TLabel",
+        )
+        self.capture_hint_label.pack(anchor="w", pady=(0, 8))
 
+        notebook = ttk.Notebook(frame)
+        notebook.pack(fill="both", expand=True, pady=(4, 0))
+
+        main_tab = ttk.Frame(notebook, padding=(8, 10, 8, 8))
+        object_tab = ttk.Frame(notebook, padding=(8, 10, 8, 8))
+        notebook.add(main_tab, text="能力")
+        notebook.add(object_tab, text="对象坐标")
+
+        self._build_main_tab(main_tab)
+        self._build_object_tab(object_tab)
+
+        buttons = ttk.Frame(frame)
+        buttons.pack(fill="x", pady=(10, 0))
+        ttk.Button(buttons, text="全部关闭", command=self.all_off).pack(side="left")
+        ttk.Button(buttons, text="重新连接", command=self.reconnect).pack(side="left", padx=(8, 0))
+        ttk.Button(buttons, text="关于", command=self.show_about).pack(side="right", padx=(8, 0))
+        ttk.Button(buttons, text="退出", command=self.close).pack(side="right")
+
+        self.error_label = ttk.Label(frame, text="", style="Small.TLabel", wraplength=840)
+        self.error_label.pack(anchor="w", pady=(8, 0), fill="x")
+
+    def _build_main_tab(self, frame: ttk.Frame) -> None:
         for key, caption, hotkey, _vk in FLAG_DEFS:
             row = ttk.Frame(frame)
             row.pack(fill="x", pady=3)
@@ -1103,15 +1306,112 @@ class TrainerApp:
         self.freezer_label = ttk.Label(freezer_frame, text="", style="Small.TLabel", wraplength=390)
         self.freezer_label.pack(anchor="w", pady=(4, 0), fill="x")
 
-        buttons = ttk.Frame(frame)
-        buttons.pack(fill="x", pady=(12, 0))
-        ttk.Button(buttons, text="全部关闭", command=self.all_off).pack(side="left")
-        ttk.Button(buttons, text="重新连接", command=self.reconnect).pack(side="left", padx=(8, 0))
-        ttk.Button(buttons, text="关于", command=self.show_about).pack(side="right", padx=(8, 0))
-        ttk.Button(buttons, text="退出", command=self.close).pack(side="right")
+    def _build_object_tab(self, frame: ttk.Frame) -> None:
+        toolbar = ttk.Frame(frame)
+        toolbar.pack(fill="x")
+        ttk.Label(toolbar, text="类型", style="Small.TLabel").pack(side="left")
+        self.object_filter_combo = ttk.Combobox(
+            toolbar,
+            textvariable=self.object_filter_var,
+            values=("全部",),
+            width=20,
+            state="readonly",
+        )
+        self.object_filter_combo.pack(side="left", padx=(6, 8))
+        self.object_filter_combo.bind("<<ComboboxSelected>>", lambda _event: self.populate_object_tree())
+        ttk.Label(toolbar, text="范围", style="Small.TLabel").pack(side="left")
+        self.object_scope_combo = ttk.Combobox(
+            toolbar,
+            textvariable=self.object_scope_var,
+            values=(OBJECT_SCOPE_ALL, OBJECT_SCOPE_RADIUS),
+            width=12,
+            state="readonly",
+        )
+        self.object_scope_combo.pack(side="left", padx=(6, 8))
+        self.object_scope_combo.bind("<<ComboboxSelected>>", self.on_object_scope_changed)
+        ttk.Label(toolbar, text="半径", style="Small.TLabel").pack(side="left")
+        self.object_radius_spinbox = ttk.Spinbox(
+            toolbar,
+            from_=1.0,
+            to=500.0,
+            increment=1.0,
+            textvariable=self.object_radius_var,
+            width=7,
+            format="%.3f",
+            command=self.populate_object_tree,
+            style="Coord.TSpinbox",
+        )
+        self.object_radius_spinbox.pack(side="left", padx=(6, 8))
+        self.object_radius_var.trace_add("write", lambda *_args: self.populate_object_tree())
+        self.update_object_radius_state()
+        ttk.Button(toolbar, text="刷新对象", command=self.refresh_objects).pack(side="left")
+        self.object_status_label = ttk.Label(toolbar, text="", style="Small.TLabel")
+        self.object_status_label.pack(side="left", padx=(10, 0))
 
-        self.error_label = ttk.Label(frame, text="", style="Small.TLabel", wraplength=390)
-        self.error_label.pack(anchor="w", pady=(10, 0), fill="x")
+        table_frame = ttk.Frame(frame)
+        table_frame.pack(fill="x", pady=(8, 0))
+        table_frame.columnconfigure(0, weight=1)
+        table_frame.rowconfigure(0, weight=1)
+
+        columns = ("mark", "source", "type", "address", "id", "x", "y", "z", "distance")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", selectmode="browse", height=10)
+        headings = {
+            "mark": "",
+            "source": "数组",
+            "type": "类型",
+            "address": "地址",
+            "id": "ID",
+            "x": "X",
+            "y": "Y",
+            "z": "Z",
+            "distance": "距离",
+        }
+        widths = {
+            "mark": 26,
+            "source": 64,
+            "type": 150,
+            "address": 132,
+            "id": 96,
+            "x": 86,
+            "y": 86,
+            "z": 86,
+            "distance": 78,
+        }
+        for column in columns:
+            tree.heading(column, text=headings[column])
+            tree.column(column, width=widths[column], minwidth=widths[column], anchor="w", stretch=column == "type")
+
+        yscroll = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        xscroll = ttk.Scrollbar(table_frame, orient="horizontal", command=tree.xview)
+        tree.configure(yscrollcommand=yscroll.set, xscrollcommand=xscroll.set)
+        tree.grid(row=0, column=0, sticky="nsew")
+        yscroll.grid(row=0, column=1, sticky="ns")
+        xscroll.grid(row=1, column=0, sticky="ew")
+        tree.bind("<<TreeviewSelect>>", self.on_object_selected)
+        self.object_tree = tree
+
+        editor = ttk.Frame(frame)
+        editor.pack(fill="x", pady=(10, 0))
+        ttk.Label(editor, text="选中坐标", style="Status.TLabel").pack(side="left", padx=(0, 10))
+        for axis in COORD_AXES:
+            group = ttk.Frame(editor)
+            group.pack(side="left", padx=(0, 8))
+            ttk.Label(group, text=axis.upper(), style="Small.TLabel").pack(anchor="w")
+            ttk.Spinbox(
+                group,
+                from_=-COORD_LIMIT,
+                to=COORD_LIMIT,
+                increment=1.0,
+                textvariable=self.object_coord_vars[axis],
+                width=11,
+                format="%.3f",
+                style="Coord.TSpinbox",
+            ).pack(anchor="w")
+        ttk.Button(editor, text="读取选中", command=self.read_selected_object).pack(side="left", padx=(4, 0))
+        ttk.Button(editor, text="写入选中", command=self.write_selected_object).pack(side="left", padx=(8, 0))
+
+        self.object_edit_label = ttk.Label(frame, text="", style="Small.TLabel", wraplength=840)
+        self.object_edit_label.pack(anchor="w", pady=(6, 0), fill="x")
 
     def desired_flags(self) -> dict[str, bool]:
         return {key: var.get() for key, var in self.vars.items()}
@@ -1146,6 +1446,170 @@ class TrainerApp:
     def set_coordinate_values(self, values: tuple[float, float, float]) -> None:
         for axis, value in zip(COORD_AXES, values):
             self.coord_vars[axis].set(f"{value:.3f}")
+
+    def object_coordinate_values(self) -> tuple[float, float, float]:
+        values: list[float] = []
+        for axis in COORD_AXES:
+            text = self.object_coord_vars[axis].get().strip()
+            try:
+                value = float(text)
+            except ValueError as exc:
+                raise TrainerError(f"{axis.upper()} 坐标不是有效数字") from exc
+            if not math.isfinite(value) or abs(value) > COORD_LIMIT:
+                raise TrainerError(f"{axis.upper()} 坐标超出允许范围")
+            values.append(value)
+        return (values[0], values[1], values[2])
+
+    def set_object_coordinate_values(self, values: tuple[float, float, float]) -> None:
+        for axis, value in zip(COORD_AXES, values):
+            self.object_coord_vars[axis].set(f"{value:.3f}")
+
+    def selected_object_address(self) -> int:
+        if not self.object_tree:
+            raise TrainerError("对象列表尚未初始化")
+        selection = self.object_tree.selection()
+        if not selection:
+            raise TrainerError("尚未选择对象")
+        return int(selection[0], 16)
+
+    def on_object_scope_changed(self, _event: tk.Event | None = None) -> None:
+        self.update_object_radius_state()
+        self.populate_object_tree()
+
+    def update_object_radius_state(self) -> None:
+        if not self.object_radius_spinbox:
+            return
+        state = "normal" if self.object_scope_var.get() == OBJECT_SCOPE_RADIUS else "disabled"
+        self.object_radius_spinbox.configure(state=state)
+
+    def object_radius(self) -> float:
+        try:
+            radius = float(self.object_radius_var.get())
+        except ValueError:
+            return OBJECT_RADIUS_DEFAULT
+        if not math.isfinite(radius) or radius <= 0:
+            return OBJECT_RADIUS_DEFAULT
+        return radius
+
+    def object_matches_scope(self, record: CoordinateObject) -> bool:
+        scope = self.object_scope_var.get()
+        if scope == OBJECT_SCOPE_RADIUS:
+            return record.distance <= self.object_radius()
+        return True
+
+    def refresh_objects(self) -> None:
+        try:
+            self.backend.last_attach_attempt = 0.0
+            self.backend.attach_if_needed()
+            self.object_records = self.backend.coordinate_objects()
+            self.object_record_by_address = {
+                record.address: record for record in self.object_records
+            }
+            names = ["全部"] + sorted(
+                {record.type_info.name for record in self.object_records},
+                key=str.lower,
+            )
+            if self.object_filter_combo:
+                self.object_filter_combo.configure(values=tuple(names))
+            if self.object_filter_var.get() not in names:
+                self.object_filter_var.set("全部")
+            self.populate_object_tree()
+            if self.object_status_label:
+                self.object_status_label.configure(text=f"已刷新 {len(self.object_records)} 个对象")
+        except Exception as exc:
+            if self.object_status_label:
+                self.object_status_label.configure(text=f"对象：{exc}")
+
+    def populate_object_tree(self) -> None:
+        if not self.object_tree:
+            return
+        try:
+            selected = self.selected_object_address()
+        except TrainerError:
+            selected = 0
+        tree = self.object_tree
+        children = tree.get_children()
+        if children:
+            tree.delete(*children)
+        wanted = self.object_filter_var.get()
+        records = [
+            record
+            for record in self.object_records
+            if (wanted == "全部" or record.type_info.name == wanted)
+            and self.object_matches_scope(record)
+        ]
+        for record in records:
+            x, y, z = record.position
+            iid = f"{record.address:X}"
+            tree.insert(
+                "",
+                "end",
+                iid=iid,
+                values=(
+                    "P" if record.is_player else "",
+                    f"{record.source}[{record.index}]",
+                    record.type_info.name,
+                    f"0x{record.address:X}",
+                    f"0x{record.entity_id:X}",
+                    f"{x:.3f}",
+                    f"{y:.3f}",
+                    f"{z:.3f}",
+                    f"{record.distance:.2f}",
+                ),
+            )
+        if selected and tree.exists(f"{selected:X}"):
+            tree.selection_set(f"{selected:X}")
+            tree.see(f"{selected:X}")
+        if self.object_status_label:
+            self.object_status_label.configure(text=f"显示 {len(records)} / {len(self.object_records)}")
+
+    def on_object_selected(self, _event: object | None = None) -> None:
+        try:
+            address = self.selected_object_address()
+            record = self.object_record_by_address.get(address)
+            if record is not None:
+                self.set_object_coordinate_values(record.position)
+                if self.object_edit_label:
+                    self.object_edit_label.configure(
+                        text=f"选中：{record.type_info.name} 0x{record.address:X}"
+                    )
+        except Exception as exc:
+            if self.object_edit_label:
+                self.object_edit_label.configure(text=f"对象：{exc}")
+
+    def read_selected_object(self) -> None:
+        try:
+            address = self.selected_object_address()
+            self.backend.last_attach_attempt = 0.0
+            self.backend.attach_if_needed()
+            values = self.backend.object_xyz(address)
+            self.set_object_coordinate_values(values)
+            record = self.object_record_by_address.get(address)
+            if record:
+                record.position = values
+            self.populate_object_tree()
+            if self.object_edit_label:
+                self.object_edit_label.configure(text=f"对象：已读取 0x{address:X}")
+        except Exception as exc:
+            if self.object_edit_label:
+                self.object_edit_label.configure(text=f"对象：{exc}")
+
+    def write_selected_object(self) -> None:
+        try:
+            address = self.selected_object_address()
+            values = self.object_coordinate_values()
+            self.backend.last_attach_attempt = 0.0
+            self.backend.attach_if_needed()
+            self.backend.write_object_xyz(address, values)
+            record = self.object_record_by_address.get(address)
+            if record:
+                record.position = values
+            self.populate_object_tree()
+            if self.object_edit_label:
+                self.object_edit_label.configure(text=f"对象：已写入 0x{address:X}")
+        except Exception as exc:
+            if self.object_edit_label:
+                self.object_edit_label.configure(text=f"对象：{exc}")
 
     def read_coordinates(self) -> None:
         try:
@@ -1261,7 +1725,7 @@ class TrainerApp:
             if player:
                 self.player_label.configure(text=f"玩家：已捕获 0x{player:X}")
             else:
-                self.player_label.configure(text="玩家：等待进入能力状态")
+                self.player_label.configure(text="玩家：请移动一下主角以捕获地址")
             self.error_label.configure(text="")
         else:
             self.game_label.configure(text=f"游戏：等待 {PROCESS_NAME}")
