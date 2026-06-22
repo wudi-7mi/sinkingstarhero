@@ -16,14 +16,15 @@ import struct
 import sys
 import time
 import tkinter as tk
+import webbrowser
 from dataclasses import dataclass
-from tkinter import messagebox
 from tkinter import ttk
 from ctypes import wintypes
 
 
 APP_NAME = "SinkingStarHero"
 APP_VERSION = "0.3.0"
+GITHUB_REPOSITORY_URL = "https://github.com/wudi-7mi/sinkingstarhero"
 PROCESS_NAME = "sinking_star.exe"
 
 PICK_RVA = 0x2AEF49
@@ -1660,11 +1661,39 @@ class TrainerApp:
         self.on_flags_changed()
 
     def show_about(self) -> None:
-        messagebox.showinfo(
-            "关于",
-            f"{APP_NAME} v{APP_VERSION}\n\n作者：不是吴昊的wh",
-            parent=self.root,
+        about = tk.Toplevel(self.root)
+        about.title("关于")
+        about.transient(self.root)
+        about.resizable(False, False)
+        about.configure(bg="#f4f5f1")
+
+        frame = ttk.Frame(about, padding=(18, 16, 18, 14))
+        frame.pack(fill="both", expand=True)
+
+        ttk.Label(frame, text=f"{APP_NAME} v{APP_VERSION}", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(frame, text="作者：不是吴昊的wh", style="Status.TLabel").pack(anchor="w", pady=(8, 0))
+        ttk.Label(frame, text="GitHub 仓库：", style="Status.TLabel").pack(anchor="w", pady=(12, 0))
+
+        link = tk.Label(
+            frame,
+            text="wudi-7mi/sinkingstarhero",
+            bg="#f4f5f1",
+            fg="#0b57d0",
+            cursor="hand2",
+            font=("Segoe UI", 9, "underline"),
         )
+        link.pack(anchor="w", pady=(2, 0))
+        link.bind("<Button-1>", lambda _event: webbrowser.open_new_tab(GITHUB_REPOSITORY_URL))
+
+        ttk.Button(frame, text="关闭", command=about.destroy).pack(anchor="e", pady=(14, 0))
+        about.bind("<Escape>", lambda _event: about.destroy())
+
+        about.update_idletasks()
+        x = self.root.winfo_rootx() + (self.root.winfo_width() - about.winfo_width()) // 2
+        y = self.root.winfo_rooty() + (self.root.winfo_height() - about.winfo_height()) // 2
+        about.geometry(f"+{max(x, 0)}+{max(y, 0)}")
+        about.grab_set()
+        about.focus_set()
 
     def reconnect(self) -> None:
         self.backend.detach()
