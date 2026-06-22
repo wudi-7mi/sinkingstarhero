@@ -23,7 +23,7 @@ from ctypes import wintypes
 
 
 APP_NAME = "SinkingStarHero"
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.2.0"
 PROCESS_NAME = "sinking_star.exe"
 
 PICK_RVA = 0x2AEF49
@@ -47,9 +47,20 @@ PLAYER_THROUGH = 0x389
 PLAYER_SMASH = 0x38A
 PLAYER_DOUBLE = 0x38B
 PLAYER_GATE_LOCK = 0x38F
+PLAYER_LEVEL = 0xF0
 PLAYER_COORD_OFFSETS = (0x00, 0x04, 0x08)
 COORD_AXES = ("x", "y", "z")
 COORD_LIMIT = 1_000_000.0
+
+LEVEL_FREEZER_COUNT = 0x7E0
+LEVEL_FREEZER_ARRAY = 0x7E8
+FREEZER_ID = 0x100
+FREEZER_TYPE = 0x108
+FREEZER_OPENED = 0x338
+FREEZER_TYPE_RVA = 0x5C70C0
+FREEZER_OPEN_RADIUS = 8.0
+MAX_FREEZER_COUNT = 4096
+OPEN_FREEZER_HOTKEY = ("open_freezer", "Ctrl+Alt+5", 0x35)
 
 FLAG_DEFS = (
     ("through", "穿墙 / 绿光", "Ctrl+Alt+1", 0x31),
@@ -392,6 +403,14 @@ class HookInfo:
     owns_hook: bool
 
 
+@dataclass
+class FreezerOpenResult:
+    address: int
+    freezer_id: int
+    distance: float
+    position: tuple[float, float, float]
+
+
 class ProcessMemory:
     def __init__(self, pid: int) -> None:
         self.pid = pid
@@ -459,6 +478,12 @@ class ProcessMemory:
 
     def read_u64(self, address: int) -> int:
         return struct.unpack("<Q", self.read(address, 8))[0]
+
+    def read_u32(self, address: int) -> int:
+        return struct.unpack("<I", self.read(address, 4))[0]
+
+    def read_u8(self, address: int) -> int:
+        return self.read(address, 1)[0]
 
     def read_f32(self, address: int) -> float:
         return struct.unpack("<f", self.read(address, 4))[0]
@@ -849,6 +874,68 @@ class LightTrainerBackend:
             raise TrainerError("尚未捕获玩家实体")
         self.mem.write(player, struct.pack("<fff", *values))
 
+    def open_nearest_freezer(self, max_distance: float = FREEZER_OPEN_RADIUS) -> FreezerOpenResult:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+        player = self.player_ptr()
+        if not player:
+            raise TrainerError("尚未捕获玩家实体")
+
+        px, py, pz = (self.mem.read_f32(player + offset) for offset in PLAYER_COORD_OFFSETS)
+        level = self.mem.read_u64(player + PLAYER_LEVEL)
+        if not level:
+            raise TrainerError("尚未找到当前关卡")
+
+        count = self.mem.read_u64(level + LEVEL_FREEZER_COUNT)
+        array = self.mem.read_u64(level + LEVEL_FREEZER_ARRAY)
+        if count <= 0 or not array:
+            raise TrainerError("当前关卡没有笼子列表")
+        if count > MAX_FREEZER_COUNT:
+            raise TrainerError(f"笼子数量异常：{count}")
+
+        freezer_type = self.module.base + FREEZER_TYPE_RVA
+        best: FreezerOpenResult | None = None
+        for index in range(count):
+            try:
+                freezer = self.mem.read_u64(array + index * 8)
+                if not freezer:
+                    continue
+                if self.mem.read_u64(freezer + FREEZER_TYPE) != freezer_type:
+                    continue
+                if self.mem.read_u8(freezer + FREEZER_OPENED):
+                    continue
+
+                fx, fy, fz = (
+                    self.mem.read_f32(freezer + offset) for offset in PLAYER_COORD_OFFSETS
+                )
+                if not all(math.isfinite(value) for value in (fx, fy, fz)):
+                    continue
+
+                dx = fx - px
+                dy = fy - py
+                dz = fz - pz
+                distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+                if best is None or distance < best.distance:
+                    freezer_id = self.mem.read_u32(freezer + FREEZER_ID)
+                    best = FreezerOpenResult(
+                        address=freezer,
+                        freezer_id=freezer_id,
+                        distance=distance,
+                        position=(fx, fy, fz),
+                    )
+            except TrainerError:
+                continue
+
+        if best is None:
+            raise TrainerError("附近没有未打开的笼子")
+        if best.distance > max_distance:
+            raise TrainerError(
+                f"最近未打开笼子距离 {best.distance:.2f}，超过 {max_distance:.1f}"
+            )
+
+        self.mem.write_u8(best.address + FREEZER_OPENED, 1)
+        return best
+
     def status_counters(self) -> tuple[int, int, int]:
         if not self.attached or not self.mem:
             return (0, 0, 0)
@@ -867,8 +954,8 @@ class TrainerApp:
     ) -> None:
         self.root = tk.Tk()
         self.root.title(f"{APP_NAME} v{APP_VERSION}")
-        self.root.geometry("430x480")
-        self.root.minsize(430, 480)
+        self.root.geometry("430x550")
+        self.root.minsize(430, 550)
         self.root.configure(bg="#f4f5f1")
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
@@ -1003,15 +1090,28 @@ class TrainerApp:
         self.coord_label = ttk.Label(coord_frame, text="", style="Small.TLabel", wraplength=390)
         self.coord_label.pack(anchor="w", pady=(6, 0), fill="x")
 
+        freezer_frame = ttk.Frame(frame)
+        freezer_frame.pack(fill="x", pady=(12, 0))
+        ttk.Label(freezer_frame, text="金属笼子", style="Status.TLabel").pack(anchor="w")
+        freezer_buttons = ttk.Frame(freezer_frame)
+        freezer_buttons.pack(fill="x", pady=(6, 0))
+        ttk.Button(
+            freezer_buttons,
+            text=f"{OPEN_FREEZER_HOTKEY[1]}  打开面前笼子",
+            command=self.open_freezer,
+        ).pack(side="left")
+        self.freezer_label = ttk.Label(freezer_frame, text="", style="Small.TLabel", wraplength=390)
+        self.freezer_label.pack(anchor="w", pady=(4, 0), fill="x")
+
         buttons = ttk.Frame(frame)
-        buttons.pack(fill="x", pady=(16, 0))
+        buttons.pack(fill="x", pady=(12, 0))
         ttk.Button(buttons, text="全部关闭", command=self.all_off).pack(side="left")
         ttk.Button(buttons, text="重新连接", command=self.reconnect).pack(side="left", padx=(8, 0))
         ttk.Button(buttons, text="关于", command=self.show_about).pack(side="right", padx=(8, 0))
         ttk.Button(buttons, text="退出", command=self.close).pack(side="right")
 
         self.error_label = ttk.Label(frame, text="", style="Small.TLabel", wraplength=390)
-        self.error_label.pack(anchor="w", pady=(14, 0), fill="x")
+        self.error_label.pack(anchor="w", pady=(10, 0), fill="x")
 
     def desired_flags(self) -> dict[str, bool]:
         return {key: var.get() for key, var in self.vars.items()}
@@ -1067,6 +1167,23 @@ class TrainerApp:
         except Exception as exc:
             self.coord_label.configure(text=f"坐标：{exc}")
 
+    def open_freezer(self) -> None:
+        try:
+            self.backend.last_attach_attempt = 0.0
+            self.backend.attach_if_needed()
+            result = self.backend.open_nearest_freezer()
+            self.freezer_label.configure(
+                text=f"笼子：已打开 ID {result.freezer_id}，距离 {result.distance:.2f}"
+            )
+            self.debug(
+                f"open_freezer id={result.freezer_id} "
+                f"addr=0x{result.address:X} distance={result.distance:.2f}"
+            )
+        except Exception as exc:
+            self.backend.last_error = str(exc)
+            self.freezer_label.configure(text=f"笼子：{exc}")
+            self.debug(f"open_freezer_error {type(exc).__name__}")
+
     def on_flags_changed(self) -> None:
         try:
             self.backend.sync_flags(self.desired_flags())
@@ -1104,6 +1221,11 @@ class TrainerApp:
                     if key not in self.debounced_hotkeys:
                         self.vars[key].set(not self.vars[key].get())
                         self.on_flags_changed()
+            freezer_key, _freezer_hotkey, freezer_vk = OPEN_FREEZER_HOTKEY
+            if user32.GetAsyncKeyState(freezer_vk) & 0x8000:
+                active_now.add(freezer_key)
+                if freezer_key not in self.debounced_hotkeys:
+                    self.open_freezer()
         self.debounced_hotkeys = active_now
 
     def tick(self) -> None:
