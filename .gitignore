@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.venv/
+.trainer_build_venv/
+build_work/
+build_spec/
+dist/
+*.spec
+build/
