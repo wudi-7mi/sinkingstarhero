@@ -68,6 +68,10 @@ build\SinkingStarHero.exe
 
 本项目不是 Thekla, Inc.、Jonathan Blow 或 Arc Games 的官方项目，也未获得官方背书。
 
+## 开源协议
+
+本项目使用 MIT License，详见 [LICENSE](LICENSE)。
+
 ## 致谢
 
 感谢 **Thekla, Inc.** 与 **Jonathan Blow** 创作 **Order of the Sinking Star**。这个工具只是在单机环境下围绕 demo 做学习、调试和娱乐用途的轻量辅助。
