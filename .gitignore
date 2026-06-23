@@ -7,3 +7,4 @@ build_spec/
 dist/
 *.spec
 build/
+analysis_out/

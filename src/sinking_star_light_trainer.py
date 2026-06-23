@@ -23,9 +23,198 @@ from ctypes import wintypes
 
 
 APP_NAME = "SinkingStarHero"
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.3.1"
 GITHUB_REPOSITORY_URL = "https://github.com/wudi-7mi/sinkingstarhero"
 PROCESS_NAME = "sinking_star.exe"
+WINDOW_WIDTH = 920
+WINDOW_HEIGHT = 760
+WINDOW_MIN_WIDTH = 760
+WINDOW_MIN_HEIGHT = 560
+
+OPEN_CONSOLE_ARG = "-open_console"
+OPEN_CONSOLE_STRING_RVA = 0x6407C8
+OPEN_CONSOLE_TABLE_RVA = 0x5C0EE0
+OPEN_CONSOLE_FIELD_OFFSET = 0x11
+PLAYTEST_FLAG_RVA = 0x9ACB82
+RUNNING_PACKAGED_FLAG_RVA = 0x72EF17
+
+CURRENT_LEVEL_SET_RVA = 0x9ACF58
+CURRENT_LEVEL_INDEX_RVA = 0x9ACBA0
+PENDING_LEVEL_SET_RVA = 0x9ACF60
+PENDING_LEVEL_INDEX_RVA = 0x72E070
+TRANSITION_STATE_RVA = 0x72E9D0
+TRANSITION_PHASE_RVA = 0x9AECD0
+TRANSITION_DELAY_RVA = 0x9AC2E0
+TRANSITION_PROGRESS_RVA = 0x9AC2E8
+LEVEL_SET_CATALOG_CAPACITY_RVA = 0xEF2340
+LEVEL_SET_CATALOG_TABLE_RVA = 0xEF2368
+LEVEL_SET_CATALOG_ENTRY_SIZE = 0x20
+MAX_LEVEL_SET_CATALOG_ENTRIES = 4096
+MAX_LEVELS_PER_SET = 1024
+TRANSITION_STATE_SWITCH_LEVEL = 4
+TRANSITION_PHASE_REQUESTED = 3
+
+LEVEL_STATUS_MAP_PTR_RVA = 0x9ACE80
+LEVEL_STATUS_MAP_CAPACITY = 0x08
+LEVEL_STATUS_MAP_TABLE = 0x30
+LEVEL_STATUS_MAP_ENTRY_SIZE = 0x20
+LEVEL_STATUS_MAP_ENTRY_HASH = 0x00
+LEVEL_STATUS_MAP_ENTRY_KEY_LEN = 0x08
+LEVEL_STATUS_MAP_ENTRY_KEY_PTR = 0x10
+LEVEL_STATUS_MAP_ENTRY_FLAGS = 0x18
+LEVEL_STATUS_HASH_MIN_USED = 2
+LEVEL_STATUS_SOLVED_FLAG = 0x01
+MAX_LEVEL_STATUS_ENTRIES = 4096
+
+LEVEL_SET_NAME_LEN = 0x00
+LEVEL_SET_NAME_PTR = 0x08
+LEVEL_SET_COUNT = 0x38
+LEVEL_SET_TABLE = 0x40
+LEVEL_SET_ENTRY_SIZE = 0x10
+
+BUILTIN_LEVEL_SETS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "heroes1",
+        (
+            "heroes1_1",
+            "heroes1_2_v2",
+            "heroes1_3",
+            "heroes1_4",
+            "heroes1_4.5",
+            "heroes1_5_v2",
+            "heroes1_7_v2",
+            "heroes1_6",
+            "heroes1_7.5",
+            "heroes1_8_v2",
+            "heroes1_10_inv_v4_b",
+            "heroes1_9",
+            "heroes1_11_v2",
+            "heroes1_13_v2",
+            "heroes1_12_v2_alt",
+            "heroes1_15",
+            "heroes1_16_v3",
+            "heroes1_17",
+            "heroes1_18",
+            "heroes1_19_jail",
+            "heroes1_21_v3",
+        ),
+    ),
+    (
+        "heroes2",
+        (
+            "heroes2_2b",
+            "heroes2_2",
+            "heroes2_thief_goblin",
+            "heroes2_3_v2",
+            "heroes2_5_altE",
+            "heroes2_5_no_crystal",
+            "heroes2_5.5v5",
+            "heroes2_6_v3",
+            "heroes2_9",
+            "heroes2_10a_intro",
+            "heroes2_10a",
+            "heroes2_3monster",
+            "heroes2_10",
+            "heroes2_11_v2_easier",
+            "heroes2_12_v2",
+            "heroes2_11_v2",
+            "heroes2_10.5",
+            "one_fire_v2",
+            "heroes2_13",
+            "heroes2_14",
+            "heroes2_15",
+            "heroes2_reprise",
+            "heroes2_16v4",
+            "heroes2_18",
+            "mosh_pit_small",
+            "heroes2_17_intro",
+            "heroes2_17",
+            "heroes2_20",
+            "heroes2_21b",
+            "heroes2_22_v2",
+        ),
+    ),
+    (
+        "heroes3",
+        (
+            "heroes3_10",
+            "heroes3_11_v2",
+            "druid_and_dragon",
+            "wizard_and_druid_alt_5",
+            "heroes3_15_v4",
+            "heroes3_1_v3",
+            "heroes3_2_v4",
+            "heroes3_3_v2",
+            "heroes3_4",
+            "heroes3_5",
+        ),
+    ),
+    (
+        "heroes_and_water",
+        (
+            "dipping_your_toes_in",
+            "crystal_bridges",
+            "push_and_pull_zach",
+            "quadrants_follow_up",
+            "quadrants",
+            "drowner",
+            "surrounded",
+            "dont_push_the_button",
+            "detonator",
+            "a_wiz_out_of_water",
+            "island_hopping",
+            "dunk_tank_alt",
+            "gully_alt",
+            "easy_situation_v2",
+            "one_vs_three",
+        ),
+    ),
+    ("intro", ("intro",)),
+    (
+        "mirror",
+        (
+            "mirror_1",
+            "mirror_2",
+            "mirror_3",
+            "mirror_4",
+            "mirror_5",
+            "mirror_6_alt",
+            "mirror_7",
+            "mirror_8_v5",
+            "mirror_11",
+            "mirror_12",
+            "mirror_13",
+            "mirror_14",
+            "mirror_15",
+            "mirror_19",
+            "mirror_17",
+            "mirror_sink",
+            "mirror_20",
+            "mirror_18",
+            "mirror_21",
+            "mirror_22_v2",
+            "mirror_factory_v2",
+            "mirror_pals",
+            "walk_it_over",
+            "mirror_10_alt2",
+            "mundane_mirror",
+            "mirror_10_b_v2",
+            "mirror_10_d",
+        ),
+    ),
+    ("overworld", ("overworld",)),
+    ("promesst1_and_2", ("promesst1_streamlined",)),
+    ("worlds_collide", ("worlds_collide_heroes_and_mirrors_v3",)),
+)
+
+BUILTIN_EXTRA_LEVEL_NAMES = (
+    "env_corral",
+    "ingame_glyphs",
+    "ingame_particles",
+    "menu",
+    "menu_demo_startup",
+    "preload_material_scene",
+)
 
 PICK_RVA = 0x2AEF49
 GATE_RVA = 0x2AF0CC
@@ -445,6 +634,53 @@ class CoordinateObject:
     is_player: bool
 
 
+@dataclass
+class LevelState:
+    level_set: str
+    level_index: int
+    level_name: str
+    pending_level_set: str
+    pending_level_index: int
+    transition_state: int
+    transition_phase: int
+
+
+@dataclass(frozen=True)
+class RuntimeLevelRoute:
+    level_set: str
+    level_index: int
+    level_name: str
+    level_set_ptr: int
+
+
+@dataclass(frozen=True)
+class LevelSwitchResult:
+    level_set: str
+    level_index: int
+    level_name: str
+    level_set_ptr: int
+    transition_state: int
+    transition_phase: int
+
+
+@dataclass(frozen=True)
+class LevelCompletion:
+    level_name: str
+    flags: int
+
+    @property
+    def solved(self) -> bool:
+        return bool(self.flags & LEVEL_STATUS_SOLVED_FLAG)
+
+
+@dataclass
+class ConsoleSwitchInfo:
+    open_console_string: str
+    open_console_table_offset: int
+    playtest_enabled: bool
+    running_packaged: bool
+
+
 class ProcessMemory:
     def __init__(self, pid: int) -> None:
         self.pid = pid
@@ -521,6 +757,12 @@ class ProcessMemory:
 
     def read_f32(self, address: int) -> float:
         return struct.unpack("<f", self.read(address, 4))[0]
+
+    def write_u64(self, address: int, value: int) -> None:
+        self.write(address, struct.pack("<Q", value & 0xFFFFFFFFFFFFFFFF))
+
+    def write_u32(self, address: int, value: int) -> None:
+        self.write(address, struct.pack("<I", value & 0xFFFFFFFF))
 
     def write_u8(self, address: int, value: int) -> None:
         self.write(address, bytes((value & 0xFF,)))
@@ -640,6 +882,96 @@ def get_module_info(pid: int, module_name: str) -> ModuleInfo:
     finally:
         kernel32.CloseHandle(snap)
     raise TrainerError(f"未找到模块 {module_name}")
+
+
+def repo_root_dir() -> str:
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def parse_level_set_file(path: str, known_levels: set[str]) -> list[str]:
+    levels: list[str] = []
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        for raw_line in fh:
+            line = raw_line.split("#", 1)[0].strip()
+            if not line or line.startswith("[") or line.startswith("*"):
+                continue
+            name = line.split()[0]
+            if name in known_levels:
+                levels.append(name)
+    return levels
+
+
+def builtin_level_lookup() -> dict[str, list[tuple[str, int]]]:
+    lookup: dict[str, list[tuple[str, int]]] = {
+        name: [] for _level_set, levels in BUILTIN_LEVEL_SETS for name in levels
+    }
+    for name in BUILTIN_EXTRA_LEVEL_NAMES:
+        lookup.setdefault(name, [])
+    for level_set, levels in BUILTIN_LEVEL_SETS:
+        for index, level in enumerate(levels):
+            lookup.setdefault(level, []).append((level_set, index))
+    return lookup
+
+
+def build_level_lookup(root_dir: str | None = None) -> dict[str, list[tuple[str, int]]]:
+    lookup = builtin_level_lookup()
+    root = root_dir or repo_root_dir()
+    level_index_path = os.path.join(root, "analysis_out", "level_index.csv")
+    level_set_dir = os.path.join(
+        root,
+        "analysis_out",
+        "extracted_levels",
+        "data",
+        "level_sets",
+    )
+    if not os.path.exists(level_index_path) or not os.path.isdir(level_set_dir):
+        return lookup
+
+    known_levels: set[str] = set()
+    with open(level_index_path, "r", encoding="utf-8", errors="replace") as fh:
+        next(fh, None)
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            level = line.split(",", 1)[0].strip()
+            if level:
+                known_levels.add(level)
+
+    for level in known_levels:
+        lookup.setdefault(level, [])
+    for filename in sorted(os.listdir(level_set_dir)):
+        if not filename.endswith(".level_set"):
+            continue
+        path = os.path.join(level_set_dir, filename)
+        level_set = os.path.splitext(filename)[0]
+        for index, level in enumerate(parse_level_set_file(path, known_levels)):
+            route = (level_set, index)
+            routes = lookup.setdefault(level, [])
+            if route not in routes:
+                routes.append(route)
+    return lookup
+
+
+def ordered_level_names(level_routes: dict[str, list[tuple[str, int]]]) -> list[str]:
+    names: list[str] = []
+    seen: set[str] = set()
+    for _level_set, levels in BUILTIN_LEVEL_SETS:
+        for level in levels:
+            if level in level_routes and level not in seen:
+                names.append(level)
+                seen.add(level)
+    for level in sorted(level_routes):
+        if level not in seen:
+            names.append(level)
+            seen.add(level)
+    return names
+
+
+def level_completion_text(completion: LevelCompletion | None) -> str:
+    if completion is None:
+        return "未记录"
+    return "已完成" if completion.solved else "未完成"
 
 
 class LightTrainerBackend:
@@ -908,6 +1240,235 @@ class LightTrainerBackend:
             data.append(value)
         return data.decode("ascii", errors="replace")
 
+    def read_len_string(self, address: int, length: int, max_len: int = 256) -> str:
+        if not self.mem or not address or length <= 0:
+            return ""
+        data = self.mem.read(address, min(int(length), max_len))
+        return data.split(b"\0", 1)[0].decode("ascii", errors="replace")
+
+    def read_level_set(self, level_set_ptr: int, level_index: int) -> tuple[str, str, int]:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+        if not level_set_ptr:
+            return ("", "", 0)
+
+        name_len = self.mem.read_u64(level_set_ptr + LEVEL_SET_NAME_LEN)
+        name_ptr = self.mem.read_u64(level_set_ptr + LEVEL_SET_NAME_PTR)
+        level_set_name = self.read_len_string(name_ptr, name_len)
+
+        level_count = self.mem.read_u64(level_set_ptr + LEVEL_SET_COUNT)
+        table_ptr = self.mem.read_u64(level_set_ptr + LEVEL_SET_TABLE)
+        if level_index < 0 or level_index >= level_count or not table_ptr:
+            return (level_set_name, "", int(level_count))
+
+        entry = table_ptr + level_index * LEVEL_SET_ENTRY_SIZE
+        level_len = self.mem.read_u64(entry)
+        level_ptr = self.mem.read_u64(entry + 8)
+        level_name = self.read_len_string(level_ptr, level_len)
+        return (level_set_name, level_name, int(level_count))
+
+    def runtime_level_set_catalog(self) -> dict[str, int]:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+
+        base = self.module.base
+        capacity = self.mem.read_u64(base + LEVEL_SET_CATALOG_CAPACITY_RVA)
+        table_ptr = self.mem.read_u64(base + LEVEL_SET_CATALOG_TABLE_RVA)
+        if capacity <= 0 or capacity > MAX_LEVEL_SET_CATALOG_ENTRIES or not table_ptr:
+            raise TrainerError("运行时关卡集 catalog 尚不可用")
+
+        catalog: dict[str, int] = {}
+        for index in range(int(capacity)):
+            entry = table_ptr + index * LEVEL_SET_CATALOG_ENTRY_SIZE
+            try:
+                entry_hash = self.mem.read_u32(entry)
+                if entry_hash == 0:
+                    continue
+                key_len = self.mem.read_u64(entry + 8)
+                key_ptr = self.mem.read_u64(entry + 16)
+                level_set_ptr = self.mem.read_u64(entry + 24)
+            except TrainerError:
+                continue
+            if not level_set_ptr:
+                continue
+
+            name = self.read_len_string(key_ptr, key_len, 128)
+            if not name:
+                try:
+                    name, _level_name, _count = self.read_level_set(level_set_ptr, -1)
+                except TrainerError:
+                    name = ""
+            if name:
+                catalog[name] = level_set_ptr
+
+        if not catalog:
+            raise TrainerError("运行时关卡集 catalog 为空")
+        return catalog
+
+    def runtime_level_routes(self) -> dict[str, list[RuntimeLevelRoute]]:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+
+        routes: dict[str, list[RuntimeLevelRoute]] = {}
+        for catalog_name, level_set_ptr in self.runtime_level_set_catalog().items():
+            try:
+                level_set_name, _level_name, level_count = self.read_level_set(level_set_ptr, -1)
+                table_ptr = self.mem.read_u64(level_set_ptr + LEVEL_SET_TABLE)
+            except TrainerError:
+                continue
+            if level_count <= 0 or level_count > MAX_LEVELS_PER_SET or not table_ptr:
+                continue
+
+            level_set_name = level_set_name or catalog_name
+            for index in range(level_count):
+                try:
+                    entry = table_ptr + index * LEVEL_SET_ENTRY_SIZE
+                    level_len = self.mem.read_u64(entry)
+                    level_ptr = self.mem.read_u64(entry + 8)
+                    level_name = self.read_len_string(level_ptr, level_len)
+                except TrainerError:
+                    continue
+                if not level_name:
+                    continue
+                routes.setdefault(level_name, []).append(
+                    RuntimeLevelRoute(
+                        level_set=level_set_name,
+                        level_index=index,
+                        level_name=level_name,
+                        level_set_ptr=level_set_ptr,
+                    )
+                )
+        return routes
+
+    def level_completion_states(self) -> dict[str, LevelCompletion]:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+
+        base = self.module.base
+        status_ptr = self.mem.read_u64(base + LEVEL_STATUS_MAP_PTR_RVA)
+        if not status_ptr:
+            return {}
+
+        capacity = self.mem.read_u64(status_ptr + LEVEL_STATUS_MAP_CAPACITY)
+        table_ptr = self.mem.read_u64(status_ptr + LEVEL_STATUS_MAP_TABLE)
+        if capacity <= 0 or not table_ptr:
+            return {}
+        if capacity > MAX_LEVEL_STATUS_ENTRIES:
+            raise TrainerError(f"关卡完成状态表过大：capacity={capacity}")
+
+        states: dict[str, LevelCompletion] = {}
+        for index in range(int(capacity)):
+            entry = table_ptr + index * LEVEL_STATUS_MAP_ENTRY_SIZE
+            try:
+                entry_hash = self.mem.read_u32(entry + LEVEL_STATUS_MAP_ENTRY_HASH)
+                if entry_hash < LEVEL_STATUS_HASH_MIN_USED:
+                    continue
+                key_len = self.mem.read_u64(entry + LEVEL_STATUS_MAP_ENTRY_KEY_LEN)
+                key_ptr = self.mem.read_u64(entry + LEVEL_STATUS_MAP_ENTRY_KEY_PTR)
+                flags = self.mem.read_u8(entry + LEVEL_STATUS_MAP_ENTRY_FLAGS)
+            except TrainerError:
+                continue
+            if key_len <= 0 or key_len > 256 or not key_ptr:
+                continue
+
+            level_name = self.read_len_string(key_ptr, key_len, 256)
+            if level_name:
+                states[level_name] = LevelCompletion(level_name=level_name, flags=flags)
+        return states
+
+    def resolve_runtime_level_route(self, target: str) -> RuntimeLevelRoute:
+        target = target.strip()
+        if not target:
+            raise TrainerError("请输入或选择目标关卡名")
+        if any(ch.isspace() for ch in target):
+            raise TrainerError("目标关卡名不能包含空白字符")
+
+        routes = self.runtime_level_routes().get(target, [])
+        if not routes:
+            raise TrainerError(f"运行时 catalog 中未找到关卡 {target}")
+
+        try:
+            current = self.current_level_state()
+        except TrainerError:
+            current = None
+        routes = sorted(
+            routes,
+            key=lambda route: (
+                0 if current and route.level_set == current.level_set else 1,
+                route.level_set,
+                route.level_index,
+            ),
+        )
+        return routes[0]
+
+    def request_level_switch(self, target: str) -> LevelSwitchResult:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+
+        route = self.resolve_runtime_level_route(target)
+        base = self.module.base
+        phase = self.mem.read_u64(base + TRANSITION_PHASE_RVA)
+        if phase >= 2:
+            raise TrainerError(f"游戏正在过渡中（phase={phase}），稍后再试")
+
+        self.mem.write_u64(base + PENDING_LEVEL_SET_RVA, route.level_set_ptr)
+        self.mem.write_u64(base + PENDING_LEVEL_INDEX_RVA, route.level_index)
+        self.mem.write_u64(base + TRANSITION_STATE_RVA, TRANSITION_STATE_SWITCH_LEVEL)
+        self.mem.write_f32(base + TRANSITION_DELAY_RVA, 0.0)
+        self.mem.write_f32(base + TRANSITION_PROGRESS_RVA, 0.0)
+        self.mem.write_u64(base + TRANSITION_PHASE_RVA, TRANSITION_PHASE_REQUESTED)
+
+        return LevelSwitchResult(
+            level_set=route.level_set,
+            level_index=route.level_index,
+            level_name=route.level_name,
+            level_set_ptr=route.level_set_ptr,
+            transition_state=TRANSITION_STATE_SWITCH_LEVEL,
+            transition_phase=TRANSITION_PHASE_REQUESTED,
+        )
+
+    def current_level_state(self) -> LevelState:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+
+        base = self.module.base
+        level_set_ptr = self.mem.read_u64(base + CURRENT_LEVEL_SET_RVA)
+        level_index = self.mem.read_u64(base + CURRENT_LEVEL_INDEX_RVA)
+        level_set, level_name, _level_count = self.read_level_set(level_set_ptr, level_index)
+
+        pending_set_ptr = self.mem.read_u64(base + PENDING_LEVEL_SET_RVA)
+        pending_index = self.mem.read_u64(base + PENDING_LEVEL_INDEX_RVA)
+        pending_level_set = ""
+        if pending_set_ptr:
+            pending_level_set, _pending_level_name, _pending_count = self.read_level_set(
+                pending_set_ptr,
+                pending_index,
+            )
+        transition_state = self.mem.read_u64(base + TRANSITION_STATE_RVA)
+        transition_phase = self.mem.read_u64(base + TRANSITION_PHASE_RVA)
+
+        return LevelState(
+            level_set=level_set,
+            level_index=int(level_index),
+            level_name=level_name,
+            pending_level_set=pending_level_set,
+            pending_level_index=int(pending_index),
+            transition_state=int(transition_state),
+            transition_phase=int(transition_phase),
+        )
+
+    def console_switch_info(self) -> ConsoleSwitchInfo:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+
+        base = self.module.base
+        return ConsoleSwitchInfo(
+            open_console_string=self.read_c_string(base + OPEN_CONSOLE_STRING_RVA, 64),
+            open_console_table_offset=OPEN_CONSOLE_FIELD_OFFSET,
+            playtest_enabled=bool(self.mem.read_u8(base + PLAYTEST_FLAG_RVA)),
+            running_packaged=bool(self.mem.read_u8(base + RUNNING_PACKAGED_FLAG_RVA)),
+        )
+
     def entity_type_info(self, type_ptr: int) -> EntityTypeInfo:
         if type_ptr in self.type_cache:
             return self.type_cache[type_ptr]
@@ -1116,8 +1677,8 @@ class TrainerApp:
     ) -> None:
         self.root = tk.Tk()
         self.root.title(f"{APP_NAME} v{APP_VERSION}")
-        self.root.geometry("920x680")
-        self.root.minsize(760, 560)
+        self.root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
+        self.root.minsize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
         self.root.configure(bg="#f4f5f1")
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
@@ -1138,6 +1699,18 @@ class TrainerApp:
         self.object_radius_spinbox: ttk.Spinbox | None = None
         self.object_status_label: ttk.Label | None = None
         self.object_edit_label: ttk.Label | None = None
+        self.level_routes = build_level_lookup()
+        self.level_names = ordered_level_names(self.level_routes)
+        self.level_completion_states: dict[str, LevelCompletion] = {}
+        self.level_current_state: LevelState | None = None
+        self.level_current_var = tk.StringVar(value="未读取")
+        self.level_pending_var = tk.StringVar(value="未读取")
+        self.level_transition_var = tk.StringVar(value="未读取")
+        self.level_target_var = tk.StringVar()
+        self.level_route_var = tk.StringVar(value="")
+        self.level_completion_var = tk.StringVar(value="完成状态：未读取")
+        self.level_status_label: ttk.Label | None = None
+        self.level_tree: ttk.Treeview | None = None
         self.debounced_hotkeys: set[str] = set()
         self.running = True
         self.debug_log_path = debug_log_path
@@ -1211,11 +1784,14 @@ class TrainerApp:
 
         main_tab = ttk.Frame(notebook, padding=(8, 10, 8, 8))
         object_tab = ttk.Frame(notebook, padding=(8, 10, 8, 8))
+        level_tab = ttk.Frame(notebook, padding=(8, 10, 8, 8))
         notebook.add(main_tab, text="能力")
         notebook.add(object_tab, text="对象坐标")
+        notebook.add(level_tab, text="关卡")
 
         self._build_main_tab(main_tab)
         self._build_object_tab(object_tab)
+        self._build_level_tab(level_tab)
 
         buttons = ttk.Frame(frame)
         buttons.pack(fill="x", pady=(10, 0))
@@ -1413,6 +1989,96 @@ class TrainerApp:
 
         self.object_edit_label = ttk.Label(frame, text="", style="Small.TLabel", wraplength=840)
         self.object_edit_label.pack(anchor="w", pady=(6, 0), fill="x")
+
+    def _build_level_tab(self, frame: ttk.Frame) -> None:
+        current_box = ttk.Frame(frame)
+        current_box.pack(fill="x")
+        ttk.Label(current_box, text="当前关卡", style="Status.TLabel").pack(anchor="w")
+        ttk.Label(
+            current_box,
+            textvariable=self.level_current_var,
+            style="Small.TLabel",
+            wraplength=840,
+        ).pack(anchor="w", pady=(6, 0), fill="x")
+        ttk.Label(
+            current_box,
+            textvariable=self.level_pending_var,
+            style="Small.TLabel",
+            wraplength=840,
+        ).pack(anchor="w", pady=(3, 0), fill="x")
+        ttk.Label(
+            current_box,
+            textvariable=self.level_transition_var,
+            style="Small.TLabel",
+            wraplength=840,
+        ).pack(anchor="w", pady=(3, 0), fill="x")
+
+        target_box = ttk.Frame(frame)
+        target_box.pack(fill="both", expand=True, pady=(10, 0))
+        target_row = ttk.Frame(target_box)
+        target_row.pack(fill="x")
+        ttk.Label(target_row, text="关卡列表", style="Status.TLabel").pack(anchor="w")
+
+        ttk.Label(
+            target_box,
+            textvariable=self.level_route_var,
+            style="Small.TLabel",
+            wraplength=840,
+        ).pack(anchor="w", pady=(6, 0), fill="x")
+        ttk.Label(
+            target_box,
+            textvariable=self.level_completion_var,
+            style="Small.TLabel",
+            wraplength=840,
+        ).pack(anchor="w", pady=(2, 0), fill="x")
+
+        level_list_row = ttk.Frame(target_box)
+        level_list_row.pack(fill="both", expand=True, pady=(8, 0))
+
+        tree_frame = ttk.Frame(level_list_row)
+        tree_frame.pack(side="left", fill="both", expand=True)
+        tree = ttk.Treeview(
+            tree_frame,
+            columns=("state", "level", "route", "flags"),
+            show="headings",
+            height=11,
+            selectmode="browse",
+        )
+        tree.heading("state", text="状态")
+        tree.heading("level", text="关卡")
+        tree.heading("route", text="路线")
+        tree.heading("flags", text="Flags")
+        tree.column("state", width=80, stretch=False)
+        tree.column("level", width=220, stretch=True)
+        tree.column("route", width=300, stretch=True)
+        tree.column("flags", width=70, stretch=False)
+        tree.pack(side="left", fill="both", expand=True)
+        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+        tree.bind("<<TreeviewSelect>>", self.on_level_tree_selected)
+        self.level_tree = tree
+        self.populate_level_tree()
+
+        level_action_buttons = ttk.Frame(level_list_row)
+        level_action_buttons.pack(side="left", fill="y", padx=(10, 0), anchor="n")
+        ttk.Button(
+            level_action_buttons,
+            text="刷新完成状态",
+            command=self.refresh_level_completion,
+        ).pack(fill="x")
+        ttk.Button(
+            level_action_buttons,
+            text="切换选中关卡",
+            command=self.switch_selected_level,
+        ).pack(fill="x", pady=(8, 0))
+
+        self.level_status_label = ttk.Label(frame, text="", style="Small.TLabel", wraplength=840)
+        self.level_status_label.pack(anchor="w", pady=(8, 0), fill="x")
+        if not self.level_routes:
+            self.level_status_label.configure(
+                text="关卡索引未生成：先运行 python tools\\extract_sinking_star_assets.py 可启用目标下拉和路线查询。"
+            )
 
     def desired_flags(self) -> dict[str, bool]:
         return {key: var.get() for key, var in self.vars.items()}
@@ -1649,6 +2315,189 @@ class TrainerApp:
             self.freezer_label.configure(text=f"笼子：{exc}")
             self.debug(f"open_freezer_error {type(exc).__name__}")
 
+    def level_route_text(self, level_name: str) -> str:
+        routes = self.level_routes.get(level_name, [])
+        return " / ".join(f"{level_set}[{index}]" for level_set, index in routes)
+
+    def level_display_names(self) -> list[str]:
+        names = list(self.level_names)
+        known = set(names)
+        names.extend(sorted(name for name in self.level_completion_states if name not in known))
+        return names
+
+    def populate_level_tree(self) -> None:
+        if not self.level_tree:
+            return
+        selected = self.level_target_var.get().strip()
+        tree = self.level_tree
+        children = tree.get_children()
+        if children:
+            tree.delete(*children)
+
+        for level_name in self.level_display_names():
+            completion = self.level_completion_states.get(level_name)
+            flags_text = f"0x{completion.flags:02X}" if completion else "-"
+            tree.insert(
+                "",
+                "end",
+                iid=level_name,
+                values=(
+                    level_completion_text(completion),
+                    level_name,
+                    self.level_route_text(level_name),
+                    flags_text,
+                ),
+            )
+        if selected and tree.exists(selected):
+            tree.selection_set(selected)
+            tree.see(selected)
+
+    def on_level_tree_selected(self, _event: object | None = None) -> None:
+        if not self.level_tree:
+            return
+        selection = self.level_tree.selection()
+        if not selection:
+            return
+        self.level_target_var.set(selection[0])
+        self.lookup_target_level()
+
+    def refresh_level_completion(self, silent: bool = False) -> None:
+        try:
+            self.backend.last_attach_attempt = 0.0
+            self.backend.attach_if_needed()
+            states = self.backend.level_completion_states()
+            self.level_completion_states = states
+            self.populate_level_tree()
+
+            solved = sum(1 for state in states.values() if state.solved)
+            recorded = len(states)
+            known_solved = sum(
+                1
+                for level_name in self.level_names
+                if self.level_completion_states.get(level_name)
+                and self.level_completion_states[level_name].solved
+            )
+            self.level_completion_var.set(
+                f"完成状态：记录 {recorded} 个，已完成 {solved} 个；当前列表命中已完成 {known_solved} 个"
+            )
+            if self.level_status_label and not silent:
+                self.level_status_label.configure(text="关卡：完成状态已刷新")
+            target = self.level_target_var.get().strip()
+            if target:
+                self.lookup_target_level()
+        except Exception as exc:
+            if not silent:
+                self.backend.last_error = str(exc)
+                if self.level_status_label:
+                    self.level_status_label.configure(text=f"完成状态：{exc}")
+
+    def refresh_level_state(self, silent: bool = False) -> None:
+        try:
+            self.backend.last_attach_attempt = 0.0
+            self.backend.attach_if_needed()
+            state = self.backend.current_level_state()
+            self.level_current_state = state
+            self.level_current_var.set(
+                f"当前：{state.level_set}[{state.level_index}]  {state.level_name or '(unknown)'}"
+            )
+            self.level_pending_var.set(
+                f"待载入：{state.pending_level_set or '-'}[{state.pending_level_index}]"
+            )
+            self.level_transition_var.set(
+                f"过渡状态：state={state.transition_state} phase={state.transition_phase}"
+            )
+            if self.level_status_label and not silent:
+                self.level_status_label.configure(text="关卡：已刷新")
+        except Exception as exc:
+            if not silent:
+                self.backend.last_error = str(exc)
+                if self.level_status_label:
+                    self.level_status_label.configure(text=f"关卡：{exc}")
+
+    def update_level_completion_label(self, target: str) -> None:
+        completion = self.level_completion_states.get(target)
+        if completion is None:
+            self.level_completion_var.set(f"完成状态：{target} 未记录")
+            return
+        state_text = level_completion_text(completion)
+        self.level_completion_var.set(
+            f"完成状态：{target} {state_text} flags=0x{completion.flags:02X}"
+        )
+
+    def lookup_target_level(self) -> None:
+        target = self.level_target_var.get().strip()
+        if not target:
+            if self.level_status_label:
+                self.level_status_label.configure(text="关卡：请先在表格里选择关卡")
+            return
+        self.update_level_completion_label(target)
+
+        matches = self.level_routes.get(target, [])
+        if not matches:
+            self.level_route_var.set(
+                "静态索引未命中；直接切换时会再读取游戏运行时 catalog。"
+            )
+            if self.level_status_label:
+                self.level_status_label.configure(text="关卡：目标未命中静态索引，可尝试直接切换")
+            return
+
+        state = self.level_current_state
+        route_parts: list[str] = []
+        for level_set, index in matches:
+            part = f"{level_set}[{index}]"
+            if state and level_set == state.level_set:
+                delta = index - state.level_index
+                if delta:
+                    part += f"；相对当前 {delta:+d}"
+                else:
+                    part += "；当前关卡"
+            route_parts.append(part)
+
+        self.level_route_var.set("路线：" + " / ".join(route_parts))
+        if self.level_status_label:
+            self.level_status_label.configure(text="关卡：目标已命中索引，可直接切换")
+
+    def selected_level_name(self) -> str:
+        target = self.level_target_var.get().strip()
+        if not target and self.level_tree:
+            selection = self.level_tree.selection()
+            if selection:
+                target = selection[0]
+                self.level_target_var.set(target)
+        if not target:
+            raise TrainerError("请先在表格里选择关卡")
+        if any(ch.isspace() for ch in target):
+            raise TrainerError("目标关卡名不能包含空白字符")
+        return target
+
+    def switch_selected_level(self) -> None:
+        try:
+            target = self.selected_level_name()
+            self.backend.last_attach_attempt = 0.0
+            if not self.backend.attach_if_needed():
+                raise TrainerError(self.backend.last_error or "尚未连接游戏")
+            result = self.backend.request_level_switch(target)
+            self.level_route_var.set(
+                f"运行时路线：{result.level_set}[{result.level_index}]  "
+                f"{result.level_name}  ptr=0x{result.level_set_ptr:X}"
+            )
+            if self.level_status_label:
+                self.level_status_label.configure(
+                    text=(
+                        "关卡：已触发直接切换，"
+                        f"state={result.transition_state} phase={result.transition_phase}"
+                    )
+                )
+            self.debug(
+                f"level_switch target={target} set={result.level_set} "
+                f"index={result.level_index} ptr=0x{result.level_set_ptr:X}"
+            )
+            self.refresh_level_state(silent=True)
+        except Exception as exc:
+            self.backend.last_error = str(exc)
+            if self.level_status_label:
+                self.level_status_label.configure(text=f"关卡：{exc}")
+
     def on_flags_changed(self) -> None:
         try:
             self.backend.sync_flags(self.desired_flags())
@@ -1701,6 +2550,8 @@ class TrainerApp:
         ok = self.backend.attach_if_needed()
         self.debug(f"manual_reconnect ok={ok}")
         self.on_flags_changed()
+        if ok:
+            self.refresh_level_state(silent=True)
         self.refresh_labels()
 
     def hotkeys(self) -> None:
@@ -1735,6 +2586,8 @@ class TrainerApp:
                     self.debug(f"attach_attempt ok={ok}")
                 if self.backend.attached:
                     self.backend.sync_flags(self.desired_flags())
+            if self.backend.attached and self.tick_count % 20 == 0:
+                self.refresh_level_state(silent=True)
         except Exception as exc:
             self.backend.last_error = str(exc)
             self.debug(f"tick_exception {type(exc).__name__}")
@@ -1841,6 +2694,17 @@ def run_diagnose() -> int:
         lines.append(f"owns_hook={backend.hook.owns_hook}")
         lines.append(f"remote_base=0x{backend.hook.remote_base:X}")
         lines.append(f"player_ptr=0x{backend.player_ptr():X}")
+        try:
+            level = backend.current_level_state()
+            lines.append(f"current_level_set={level.level_set}")
+            lines.append(f"current_level_index={level.level_index}")
+            lines.append(f"current_level_name={level.level_name}")
+            lines.append(f"pending_level_set={level.pending_level_set}")
+            lines.append(f"pending_level_index={level.pending_level_index}")
+            lines.append(f"transition_state={level.transition_state}")
+            lines.append(f"transition_phase={level.transition_phase}")
+        except Exception as exc:
+            lines.append(f"level_probe_error={exc}")
     backend.detach()
 
     log_path = os.path.join(os.getcwd(), "SinkingStarHero_diagnose.txt")
