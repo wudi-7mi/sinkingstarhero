@@ -23,7 +23,7 @@ from ctypes import wintypes
 
 
 APP_NAME = "SinkingStarHero"
-APP_VERSION = "0.3.1"
+APP_VERSION = "0.4.0"
 GITHUB_REPOSITORY_URL = "https://github.com/wudi-7mi/sinkingstarhero"
 PROCESS_NAME = "sinking_star.exe"
 WINDOW_WIDTH = 920
@@ -53,6 +53,38 @@ MAX_LEVEL_SET_CATALOG_ENTRIES = 4096
 MAX_LEVELS_PER_SET = 1024
 TRANSITION_STATE_SWITCH_LEVEL = 4
 TRANSITION_PHASE_REQUESTED = 3
+CURRENT_CAMPAIGN_NAME_RVA = 0x9AC8F0
+CAMPAIGN_LOAD_RVA = 0x048880
+CAMPAIGN_SAVE_CURRENT_RVA = 0x154860
+ENTITY_MANAGER_SAVE_RVA = 0x1B5EA0
+SAVE_QUEUE_COUNT_RVA = 0x9ACC98
+RELOAD_SAVE_SETTLE_FRAMES = 60
+MAIN_LOOP_RELOAD_HOOK_RVA = 0x1CA8B3
+MAIN_LOOP_RELOAD_HOOK_SIGNATURE = bytes.fromhex("48 8B 05 F6 40 56 00")
+MAIN_LOOP_RELOAD_HOOK_LEN = len(MAIN_LOOP_RELOAD_HOOK_SIGNATURE)
+MAIN_LOOP_RELOAD_RETURN_DELTA = MAIN_LOOP_RELOAD_HOOK_LEN
+POST_UPDATE_STATE_RVA = 0x72E9B0
+
+RELOAD_STATUS_IDLE = 0
+RELOAD_STATUS_QUEUED = 1
+RELOAD_STATUS_RUNNING = 2
+RELOAD_STATUS_OK = 3
+RELOAD_STATUS_NO_CAMPAIGN = 4
+RELOAD_STATUS_BUSY = 5
+RELOAD_STATUS_SAVING = 6
+RELOAD_STATUS_WAITING_SAVE = 7
+RELOAD_STATUS_LOADING = 8
+RELOAD_STATUS_MESSAGES = {
+    RELOAD_STATUS_IDLE: "空闲",
+    RELOAD_STATUS_QUEUED: "已排队",
+    RELOAD_STATUS_RUNNING: "执行中",
+    RELOAD_STATUS_OK: "已执行",
+    RELOAD_STATUS_NO_CAMPAIGN: "当前存档名未知",
+    RELOAD_STATUS_BUSY: "游戏正在过渡中",
+    RELOAD_STATUS_SAVING: "正在保存当前状态",
+    RELOAD_STATUS_WAITING_SAVE: "等待保存落盘",
+    RELOAD_STATUS_LOADING: "正在重新加载",
+}
 
 LEVEL_STATUS_MAP_PTR_RVA = 0x9ACE80
 LEVEL_STATUS_MAP_CAPACITY = 0x08
@@ -239,21 +271,89 @@ PLAYER_DOUBLE = 0x38B
 PLAYER_GATE_LOCK = 0x38F
 PLAYER_LEVEL = 0xF0
 PLAYER_COORD_OFFSETS = (0x00, 0x04, 0x08)
+PLAYER_THETA_TARGET = 0x33C
+FRONT_GRID_STEP = 1.0
 COORD_AXES = ("x", "y", "z")
 COORD_LIMIT = 1_000_000.0
 
 ENTITY_ID = 0x100
 ENTITY_TYPE = 0x108
+ENTITY_THETA_CURRENT = 0x44
+ENTITY_THETA_TARGET = 0x48
+ENTITY_MESH = 0x88
+ENTITY_ORIENTATION_Z = 0x20
+ENTITY_ORIENTATION_W = 0x24
 ENTITY_TYPE_ID = 0x04
 ENTITY_TYPE_SIZE = 0x08
+ENTITY_TYPE_NAME_LEN = 0x10
 ENTITY_TYPE_NAME = 0x18
 ENTITY_KIND_ENTITY = 7
+CURRENT_ENTITY_MANAGER_RVA = 0x9ACB50
 LEVEL_OBJECT_COUNT = 0x370
 LEVEL_OBJECT_ARRAY = 0x378
 MAX_LEVEL_OBJECT_COUNT = 20000
+MAX_ENTITY_TYPE_NAME_LEN = 96
 OBJECT_SCOPE_ALL = "全部区域"
 OBJECT_SCOPE_RADIUS = "附近半径"
 OBJECT_RADIUS_DEFAULT = 8.0
+OBJECT_APPEARANCE_MAX_LEN = 256
+ENTITY_FILE_MAGIC = b"enty"
+PACKAGE_MAGIC = b"simp"
+PACKAGE_TOC_MAGIC = b"toc!"
+SPAWN_COORD_FIELD_IDS = {
+    "base_x": 0x0000,
+    "base_y": 0x0001,
+    "base_z": 0x0002,
+    "out_x": 0x0021,
+    "out_y": 0x0022,
+    "out_z": 0x0023,
+}
+
+RUNTIME_CONTEXT_RVA = 0x731110
+SPAWN_DYNAMIC_ENTITY_ID_RVA = 0x72E034
+SPAWN_DYNAMIC_ENTITY_ID_MASK = 0x3FD00000
+SPAWN_CREATE_ENTITY_RVA = 0x347900
+SPAWN_INIT_ENTITY_RVA = 0x0FFF60
+SPAWN_REGISTER_ENTITY_RVA = 0x2A39D0
+SPAWN_APPLY_DIFF_RVA = 0x17B410
+SPAWN_REMOTE_BLOCK_SIZE = 0x4000
+SPAWN_REMOTE_TIMEOUT_MS = 5000
+SPAWN_REQ_CTX = 0x00
+SPAWN_REQ_MANAGER = 0x08
+SPAWN_REQ_TYPE = 0x10
+SPAWN_REQ_ENTITY_ID = 0x18
+SPAWN_REQ_X = 0x1C
+SPAWN_REQ_Y = 0x20
+SPAWN_REQ_Z = 0x24
+SPAWN_REQ_STATUS = 0x28
+SPAWN_REQ_OUT_ENTITY = 0x30
+SPAWN_REQ_BEFORE_COUNT = 0x38
+SPAWN_REQ_AFTER_COUNT = 0x40
+SPAWN_REQ_CREATE_FUNC = 0x48
+SPAWN_REQ_INIT_FUNC = 0x50
+SPAWN_REQ_REGISTER_FUNC = 0x58
+SPAWN_REQ_APPLY_DIFF_FUNC = 0x60
+SPAWN_REQ_DIFF_SIZE = 0x68
+SPAWN_REQ_DIFF_PTR = 0x70
+SPAWN_REQ_HEADER_VALUE = 0x78
+SPAWN_REQ_TYPE_AUX = 0x80
+SPAWN_REQ_SIZE = 0x90
+SPAWN_STATUS_OK = 0
+SPAWN_STATUS_NO_PARAM = 1
+SPAWN_STATUS_NO_CONTEXT = 2
+SPAWN_STATUS_NO_MANAGER = 3
+SPAWN_STATUS_NO_TYPE = 4
+SPAWN_STATUS_CREATE_FAILED = 5
+SPAWN_STATUS_APPLY_FAILED = 6
+SPAWN_STATUS_MESSAGES = {
+    SPAWN_STATUS_OK: "ok",
+    SPAWN_STATUS_NO_PARAM: "远程参数为空",
+    SPAWN_STATUS_NO_CONTEXT: "运行时上下文为空",
+    SPAWN_STATUS_NO_MANAGER: "对象管理器为空",
+    SPAWN_STATUS_NO_TYPE: "对象类型为空",
+    SPAWN_STATUS_CREATE_FAILED: "游戏构造函数未返回实体",
+    SPAWN_STATUS_APPLY_FAILED: "对象属性 diff 应用失败",
+}
 
 LEVEL_FREEZER_COUNT = 0x7E0
 LEVEL_FREEZER_ARRAY = 0x7E8
@@ -295,12 +395,14 @@ TH32CS_SNAPMODULE = 0x00000008
 TH32CS_SNAPMODULE32 = 0x00000010
 
 PROCESS_QUERY_INFORMATION = 0x0400
+PROCESS_CREATE_THREAD = 0x0002
 PROCESS_VM_OPERATION = 0x0008
 PROCESS_VM_READ = 0x0010
 PROCESS_VM_WRITE = 0x0020
 SYNCHRONIZE = 0x00100000
 PROCESS_RIGHTS = (
     PROCESS_QUERY_INFORMATION
+    | PROCESS_CREATE_THREAD
     | PROCESS_VM_OPERATION
     | PROCESS_VM_READ
     | PROCESS_VM_WRITE
@@ -313,6 +415,7 @@ MEM_RELEASE = 0x00008000
 
 PAGE_EXECUTE_READWRITE = 0x40
 
+WAIT_OBJECT_0 = 0x00000000
 WAIT_TIMEOUT = 0x00000102
 VK_CONTROL = 0x11
 VK_MENU = 0x12
@@ -394,6 +497,18 @@ kernel32.FlushInstructionCache.argtypes = (HANDLE, LPCVOID, SIZE_T)
 kernel32.FlushInstructionCache.restype = BOOL
 kernel32.WaitForSingleObject.argtypes = (HANDLE, DWORD)
 kernel32.WaitForSingleObject.restype = DWORD
+kernel32.CreateRemoteThread.argtypes = (
+    HANDLE,
+    LPVOID,
+    SIZE_T,
+    LPVOID,
+    LPVOID,
+    DWORD,
+    ctypes.POINTER(DWORD),
+)
+kernel32.CreateRemoteThread.restype = HANDLE
+kernel32.GetExitCodeThread.argtypes = (HANDLE, ctypes.POINTER(DWORD))
+kernel32.GetExitCodeThread.restype = BOOL
 user32.GetAsyncKeyState.argtypes = (ctypes.c_int,)
 user32.GetAsyncKeyState.restype = ctypes.c_short
 
@@ -516,8 +631,39 @@ def build_remote_code(
     gate_skip: int,
     gate_through: int,
     gate_r14_continue: int,
+    post_update_return: int,
+    campaign_load: int,
+    campaign_save_current: int,
+    entity_manager_save: int,
+    runtime_context: int,
+    current_entity_manager: int,
+    pending_level_set: int,
+    transition_phase: int,
+    save_queue_count: int,
+    post_update_state: int,
 ) -> tuple[bytes, dict[str, int]]:
     b = CodeBuilder()
+
+    def mov_rax_imm(value: int) -> None:
+        b.emit(b"\x48\xB8" + struct.pack("<Q", value))
+
+    def mov_rcx_imm(value: int) -> None:
+        b.emit(b"\x48\xB9" + struct.pack("<Q", value))
+
+    def mov_rdx_imm(value: int) -> None:
+        b.emit(b"\x48\xBA" + struct.pack("<Q", value))
+
+    def set_reload_status(status: int) -> None:
+        b.rip(b"\xC7\x05", "reload_status", struct.pack("<I", status))
+
+    def clear_reload_request() -> None:
+        b.rip(b"\xC6\x05", "reload_requested", b"\x00")
+
+    def set_reload_phase(phase: int) -> None:
+        b.rip(b"\xC6\x05", "reload_phase", bytes((phase,)))
+
+    def set_reload_wait_frames(frames: int) -> None:
+        b.rip(b"\xC7\x05", "reload_wait_frames", struct.pack("<I", frames))
 
     b.label("pick_hook")
     b.rip(b"\x48\xFF\x05", "pick_count")
@@ -566,6 +712,145 @@ def build_remote_code(
     b.label("gate_through")
     b.jmp_abs(gate_through)
 
+    b.label("post_update_hook")
+    b.rip(b"\x48\xFF\x05", "post_update_count")
+    b.emit(b"\x51")
+    b.emit(b"\x52")
+    b.emit(b"\x41\x50")
+    b.emit(b"\x41\x51")
+    b.emit(b"\x41\x52")
+    b.emit(b"\x41\x53")
+    b.emit(b"\x48\x81\xEC\x80\x00\x00\x00")
+    b.emit(b"\x0F\x11\x44\x24\x20")
+    b.emit(b"\x0F\x11\x4C\x24\x30")
+    b.emit(b"\x0F\x11\x54\x24\x40")
+    b.emit(b"\x0F\x11\x5C\x24\x50")
+    b.emit(b"\x0F\x11\x64\x24\x60")
+    b.emit(b"\x0F\x11\x6C\x24\x70")
+
+    b.rip(b"\x80\x3D", "reload_phase", b"\x00")
+    b.jcc_label(0x85, "reload_continue_phase")
+
+    b.rip(b"\x80\x3D", "reload_requested", b"\x00")
+    b.jcc_label(0x84, "post_update_no_reload")
+
+    mov_rax_imm(transition_phase)
+    b.emit(b"\x48\x83\x38\x02")
+    b.jcc_label(0x82, "reload_begin_save")
+    clear_reload_request()
+    set_reload_status(RELOAD_STATUS_BUSY)
+    b.jmp_label("post_update_no_reload")
+
+    b.label("reload_begin_save")
+    b.rip(b"\x48\x83\x3D", "campaign_name_len", b"\x00")
+    b.jcc_label(0x84, "reload_no_campaign")
+    b.rip(b"\x48\x83\x3D", "campaign_name_ptr", b"\x00")
+    b.jcc_label(0x84, "reload_no_campaign")
+
+    clear_reload_request()
+    set_reload_status(RELOAD_STATUS_SAVING)
+    set_reload_wait_frames(0)
+    b.rip(b"\xC6\x05", "reload_out_bool", b"\x00")
+
+    mov_rcx_imm(runtime_context)
+    mov_rax_imm(campaign_save_current)
+    b.emit(b"\xFF\xD0")
+
+    mov_rax_imm(current_entity_manager)
+    b.emit(b"\x48\x8B\x10")
+    b.emit(b"\x48\x85\xD2")
+    b.jcc_label(0x84, "reload_skip_entity_save")
+    mov_rcx_imm(runtime_context)
+    b.emit(b"\x45\x33\xC0")
+    mov_rax_imm(entity_manager_save)
+    b.emit(b"\xFF\xD0")
+    b.label("reload_skip_entity_save")
+
+    set_reload_phase(1)
+    set_reload_status(RELOAD_STATUS_WAITING_SAVE)
+    b.jmp_label("post_update_no_reload")
+
+    b.label("reload_continue_phase")
+    b.rip(b"\x80\x3D", "reload_phase", b"\x01")
+    b.jcc_label(0x84, "reload_wait_save")
+    set_reload_phase(0)
+    set_reload_wait_frames(0)
+    b.jmp_label("post_update_no_reload")
+
+    b.label("reload_wait_save")
+    mov_rax_imm(transition_phase)
+    b.emit(b"\x48\x83\x38\x02")
+    b.jcc_label(0x82, "reload_check_save_queue")
+    set_reload_status(RELOAD_STATUS_BUSY)
+    b.jmp_label("post_update_no_reload")
+
+    b.label("reload_check_save_queue")
+    mov_rax_imm(save_queue_count)
+    b.emit(b"\x48\x83\x38\x00")
+    b.jcc_label(0x84, "reload_save_queue_empty")
+    set_reload_wait_frames(0)
+    set_reload_status(RELOAD_STATUS_WAITING_SAVE)
+    b.jmp_label("post_update_no_reload")
+
+    b.label("reload_save_queue_empty")
+    b.rip(b"\xFF\x05", "reload_wait_frames")
+    b.rip(b"\x83\x3D", "reload_wait_frames", bytes((RELOAD_SAVE_SETTLE_FRAMES,)))
+    b.jcc_label(0x82, "reload_still_settling")
+    b.jmp_label("reload_do_load")
+
+    b.label("reload_still_settling")
+    set_reload_status(RELOAD_STATUS_WAITING_SAVE)
+    b.jmp_label("post_update_no_reload")
+
+    b.label("reload_do_load")
+    b.rip(b"\x48\x83\x3D", "campaign_name_len", b"\x00")
+    b.jcc_label(0x84, "reload_no_campaign")
+    b.rip(b"\x48\x83\x3D", "campaign_name_ptr", b"\x00")
+    b.jcc_label(0x84, "reload_no_campaign")
+
+    set_reload_status(RELOAD_STATUS_LOADING)
+    b.rip(b"\xC6\x05", "reload_out_bool", b"\x00")
+
+    mov_rax_imm(pending_level_set)
+    b.emit(b"\x48\xC7\x00\x00\x00\x00\x00")
+    mov_rax_imm(transition_phase)
+    b.emit(b"\x48\xC7\x00\x00\x00\x00\x00")
+
+    mov_rcx_imm(runtime_context)
+    b.rip(b"\x48\x8D\x15", "campaign_name_len")
+    b.emit(b"\x41\xB8\x01\x00\x00\x00")
+    b.rip(b"\x4C\x8D\x0D", "reload_out_bool")
+    mov_rax_imm(campaign_load)
+    b.emit(b"\xFF\xD0")
+    set_reload_phase(0)
+    set_reload_wait_frames(0)
+    set_reload_status(RELOAD_STATUS_OK)
+    b.rip(b"\x48\xFF\x05", "reload_done_count")
+    b.jmp_label("post_update_no_reload")
+
+    b.label("reload_no_campaign")
+    clear_reload_request()
+    set_reload_phase(0)
+    set_reload_wait_frames(0)
+    set_reload_status(RELOAD_STATUS_NO_CAMPAIGN)
+    b.label("post_update_no_reload")
+    b.emit(b"\x0F\x10\x6C\x24\x70")
+    b.emit(b"\x0F\x10\x64\x24\x60")
+    b.emit(b"\x0F\x10\x5C\x24\x50")
+    b.emit(b"\x0F\x10\x54\x24\x40")
+    b.emit(b"\x0F\x10\x4C\x24\x30")
+    b.emit(b"\x0F\x10\x44\x24\x20")
+    b.emit(b"\x48\x81\xC4\x80\x00\x00\x00")
+    b.emit(b"\x41\x5B")
+    b.emit(b"\x41\x5A")
+    b.emit(b"\x41\x59")
+    b.emit(b"\x41\x58")
+    b.emit(b"\x5A")
+    b.emit(b"\x59")
+    mov_rax_imm(post_update_state)
+    b.emit(b"\x48\x8B\x00")
+    b.jmp_abs(post_update_return)
+
     b.align(8)
     b.label("player_ptr")
     b.dq(0)
@@ -575,6 +860,12 @@ def build_remote_code(
     b.dq(0)
     b.label("force_count")
     b.dq(0)
+    b.label("post_update_count")
+    b.dq(0)
+    b.label("reload_request_count")
+    b.dq(0)
+    b.label("reload_done_count")
+    b.dq(0)
     b.label("through_enabled")
     b.db(0)
     b.label("open_enabled")
@@ -583,6 +874,159 @@ def build_remote_code(
     b.db(0)
     b.label("double_enabled")
     b.db(0)
+    b.label("reload_requested")
+    b.db(0)
+    b.label("reload_phase")
+    b.db(0)
+    b.label("reload_out_bool")
+    b.db(0)
+    b.align(4)
+    b.label("reload_status")
+    b.emit(struct.pack("<I", RELOAD_STATUS_IDLE))
+    b.label("reload_wait_frames")
+    b.emit(struct.pack("<I", 0))
+    b.align(8)
+    b.label("campaign_name_len")
+    b.dq(0)
+    b.label("campaign_name_ptr")
+    b.dq(0)
+    b.label("campaign_name_buffer")
+    b.emit(b"\x00" * 256)
+
+    return b.finalize(remote_base)
+
+def build_runtime_spawn_code(remote_base: int) -> tuple[bytes, dict[str, int]]:
+    b = CodeBuilder()
+
+    def set_status(status: int) -> None:
+        b.emit(b"\xC7\x46" + bytes((SPAWN_REQ_STATUS,)) + struct.pack("<I", status))
+
+    def fail_label(name: str, status: int) -> None:
+        b.label(name)
+        set_status(status)
+        b.emit(b"\xB8" + struct.pack("<I", status))
+        b.jmp_label("spawn_cleanup")
+
+    def store_one_axis(src_disp: int, *dst_disps: int) -> None:
+        b.emit(b"\xF3\x0F\x10\x46" + bytes((src_disp,)))
+        for dst_disp in dst_disps:
+            if dst_disp == 0:
+                b.emit(b"\xF3\x0F\x11\x03")
+            elif 0 <= dst_disp <= 0x7F:
+                b.emit(b"\xF3\x0F\x11\x43" + bytes((dst_disp,)))
+            else:
+                b.emit(b"\xF3\x0F\x11\x83" + struct.pack("<i", dst_disp))
+
+    def store_coordinates() -> None:
+        store_one_axis(SPAWN_REQ_X, 0x00, 0xA0, 0x1D8)
+        store_one_axis(SPAWN_REQ_Y, 0x04, 0xA4, 0x1DC)
+        store_one_axis(SPAWN_REQ_Z, 0x08, 0xA8, 0x1E0)
+
+    def call_apply_diff() -> None:
+        b.emit(b"\x48\x8B\x46" + bytes((SPAWN_REQ_APPLY_DIFF_FUNC,)))
+        b.emit(b"\x48\x85\xC0")
+        b.jcc_label(0x84, "skip_apply_diff")
+        b.emit(b"\x48\x8B\x4E" + bytes((SPAWN_REQ_DIFF_SIZE,)))
+        b.emit(b"\x48\x89\x4C\x24\x50")
+        b.emit(b"\x48\x8B\x4E" + bytes((SPAWN_REQ_DIFF_PTR,)))
+        b.emit(b"\x48\x89\x4C\x24\x58")
+        b.emit(b"\xC6\x44\x24\x60\x00")
+        b.emit(b"\x48\x8B\x4E" + bytes((SPAWN_REQ_CTX,)))
+        b.emit(b"\x48\x8B\x93" + struct.pack("<i", ENTITY_TYPE))
+        b.emit(b"\x49\x89\xD8")
+        b.emit(b"\x45\x31\xC9")
+        b.emit(b"\x48\x8D\x44\x24\x50")
+        b.emit(b"\x48\x89\x44\x24\x20")
+        b.emit(b"\x48\x8B\x46" + bytes((SPAWN_REQ_HEADER_VALUE,)))
+        b.emit(b"\x48\x89\x44\x24\x28")
+        b.emit(b"\x48\x8B\x86" + struct.pack("<i", SPAWN_REQ_TYPE_AUX))
+        b.emit(b"\x48\x89\x44\x24\x30")
+        b.emit(b"\x48\xC7\x44\x24\x38\x00\x00\x00\x00")
+        b.emit(b"\x48\xC7\x44\x24\x40\x01\x00\x00\x00")
+        b.emit(b"\x48\x8D\x44\x24\x60")
+        b.emit(b"\x48\x89\x44\x24\x48")
+        b.emit(b"\x48\x8B\x46" + bytes((SPAWN_REQ_APPLY_DIFF_FUNC,)))
+        b.emit(b"\xFF\xD0")
+        b.emit(b"\x80\x7C\x24\x60\x00")
+        b.jcc_label(0x84, "fail_apply_failed")
+        b.label("skip_apply_diff")
+
+    b.label("spawn_entry")
+    b.emit(b"\x53")  # push rbx
+    b.emit(b"\x56")  # push rsi
+    b.emit(b"\x57")  # push rdi
+    b.emit(b"\x48\x81\xEC\x80\x00\x00\x00")
+    b.emit(b"\x48\x89\xCE")
+    b.emit(b"\x48\x85\xF6")
+    b.jcc_label(0x84, "fail_no_param")
+
+    set_status(0xFFFFFFFF)
+    b.emit(b"\x48\xC7\x46" + bytes((SPAWN_REQ_OUT_ENTITY,)) + b"\x00\x00\x00\x00")
+    b.emit(b"\x48\xC7\x46" + bytes((SPAWN_REQ_BEFORE_COUNT,)) + b"\x00\x00\x00\x00")
+    b.emit(b"\x48\xC7\x46" + bytes((SPAWN_REQ_AFTER_COUNT,)) + b"\x00\x00\x00\x00")
+
+    b.emit(b"\x48\x8B\x4E" + bytes((SPAWN_REQ_CTX,)))
+    b.emit(b"\x48\x85\xC9")
+    b.jcc_label(0x84, "fail_no_context")
+    b.emit(b"\x48\x8B\x56" + bytes((SPAWN_REQ_MANAGER,)))
+    b.emit(b"\x48\x85\xD2")
+    b.jcc_label(0x84, "fail_no_manager")
+    b.emit(b"\x4C\x8B\x46" + bytes((SPAWN_REQ_TYPE,)))
+    b.emit(b"\x4D\x85\xC0")
+    b.jcc_label(0x84, "fail_no_type")
+
+    b.emit(b"\x48\x8B\x82" + struct.pack("<i", LEVEL_OBJECT_COUNT))
+    b.emit(b"\x48\x89\x46" + bytes((SPAWN_REQ_BEFORE_COUNT,)))
+    b.emit(b"\x44\x8B\x4E" + bytes((SPAWN_REQ_ENTITY_ID,)))
+    b.emit(b"\x48\x8D\x46" + bytes((SPAWN_REQ_OUT_ENTITY,)))
+    b.emit(b"\x48\x89\x44\x24\x20")
+    b.emit(b"\x48\x8B\x46" + bytes((SPAWN_REQ_CREATE_FUNC,)))
+    b.emit(b"\xFF\xD0")
+
+    b.emit(b"\x48\x8B\x5E" + bytes((SPAWN_REQ_OUT_ENTITY,)))
+    b.emit(b"\x48\x85\xDB")
+    b.jcc_label(0x84, "fail_create_failed")
+
+    b.emit(b"\x48\x8B\x4E" + bytes((SPAWN_REQ_CTX,)))
+    b.emit(b"\x48\x89\xDA")
+    b.emit(b"\x48\x8B\x46" + bytes((SPAWN_REQ_INIT_FUNC,)))
+    b.emit(b"\xFF\xD0")
+
+    call_apply_diff()
+    store_coordinates()
+
+    b.emit(b"\x48\x8B\x4E" + bytes((SPAWN_REQ_CTX,)))
+    b.emit(b"\x48\x8B\x56" + bytes((SPAWN_REQ_MANAGER,)))
+    b.emit(b"\x49\x89\xD8")
+    b.emit(b"\x48\x8B\x46" + bytes((SPAWN_REQ_REGISTER_FUNC,)))
+    b.emit(b"\xFF\xD0")
+
+    store_coordinates()
+
+    b.emit(b"\x8B\x83" + struct.pack("<i", ENTITY_ID))
+    b.emit(b"\x89\x46" + bytes((SPAWN_REQ_ENTITY_ID,)))
+    b.emit(b"\x48\x8B\x56" + bytes((SPAWN_REQ_MANAGER,)))
+    b.emit(b"\x48\x8B\x82" + struct.pack("<i", LEVEL_OBJECT_COUNT))
+    b.emit(b"\x48\x89\x46" + bytes((SPAWN_REQ_AFTER_COUNT,)))
+    set_status(SPAWN_STATUS_OK)
+    b.emit(b"\x31\xC0")
+    b.jmp_label("spawn_cleanup")
+
+    b.label("fail_no_param")
+    b.emit(b"\xB8" + struct.pack("<I", SPAWN_STATUS_NO_PARAM))
+    b.jmp_label("spawn_cleanup")
+    fail_label("fail_no_context", SPAWN_STATUS_NO_CONTEXT)
+    fail_label("fail_no_manager", SPAWN_STATUS_NO_MANAGER)
+    fail_label("fail_no_type", SPAWN_STATUS_NO_TYPE)
+    fail_label("fail_create_failed", SPAWN_STATUS_CREATE_FAILED)
+    fail_label("fail_apply_failed", SPAWN_STATUS_APPLY_FAILED)
+
+    b.label("spawn_cleanup")
+    b.emit(b"\x48\x81\xC4\x80\x00\x00\x00")
+    b.emit(b"\x5F")
+    b.emit(b"\x5E")
+    b.emit(b"\x5B")
+    b.emit(b"\xC3")
 
     return b.finalize(remote_base)
 
@@ -598,11 +1042,13 @@ class ModuleInfo:
 class HookInfo:
     pick_addr: int
     gate_addr: int
+    post_update_addr: int
     remote_base: int
     remote_size: int
     labels: dict[str, int]
     original_pick: bytes
     original_gate: bytes
+    original_post_update: bytes
     owns_hook: bool
 
 
@@ -622,6 +1068,35 @@ class EntityTypeInfo:
     name: str
 
 
+@dataclass(frozen=True)
+class SpawnableEntityType:
+    name: str
+    address: int
+    type_id: int
+    type_size: int
+    live_count: int
+    package_count: int
+    level_count: int = 0
+    runtime: bool = False
+
+
+@dataclass(frozen=True)
+class SpawnEntityTemplate:
+    level_name: str
+    entity_type: str
+    entity_id: int
+    header_value: int
+    type_aux: int
+    diff: bytes
+
+
+@dataclass(frozen=True)
+class PackageEntityTypeSummary:
+    name: str
+    record_count: int
+    level_count: int
+
+
 @dataclass
 class CoordinateObject:
     address: int
@@ -630,6 +1105,8 @@ class CoordinateObject:
     entity_id: int
     type_info: EntityTypeInfo
     position: tuple[float, float, float]
+    direction: float | None
+    appearance: str
     distance: float
     is_player: bool
 
@@ -679,6 +1156,61 @@ class ConsoleSwitchInfo:
     open_console_table_offset: int
     playtest_enabled: bool
     running_packaged: bool
+
+
+@dataclass(frozen=True)
+class PackageEntry:
+    name: str
+    offset: int
+    size: int
+
+
+@dataclass(frozen=True)
+class EntityFileType:
+    name: str
+    aux: int
+
+
+@dataclass(frozen=True)
+class EntityFileRecord:
+    entity_id: int
+    type_index: int
+    diff: bytes
+
+
+@dataclass
+class EntityFilePayload:
+    version: int
+    header_value: int
+    types: list[EntityFileType]
+    records: list[EntityFileRecord]
+
+
+@dataclass(frozen=True)
+class EntitySpawnResult:
+    level_name: str
+    entity_type: str
+    template_id: int
+    new_id: int
+    output_path: str
+    old_record_count: int
+    new_record_count: int
+    old_package_size: int
+    new_package_size: int
+    patch_counts: dict[str, int]
+
+
+@dataclass(frozen=True)
+class RuntimeEntitySpawnResult:
+    entity_type: str
+    entity_id: int
+    address: int
+    position: tuple[float, float, float]
+    before_count: int
+    after_count: int
+    listed: bool
+    template_level: str = ""
+    template_id: int = 0
 
 
 class ProcessMemory:
@@ -779,6 +1311,19 @@ class ProcessMemory:
         except TrainerError:
             return 0
 
+    def alloc(self, size: int, protection: int = PAGE_EXECUTE_READWRITE) -> int:
+        size = align_up(size, 0x1000)
+        address = kernel32.VirtualAllocEx(
+            self.handle,
+            None,
+            size,
+            MEM_COMMIT | MEM_RESERVE,
+            protection,
+        )
+        if not address:
+            raise win_error("无法分配远程内存")
+        return int(address)
+
     def alloc_near(self, target: int, size: int) -> int:
         size = align_up(size, 0x1000)
         first = kernel32.VirtualAllocEx(
@@ -815,6 +1360,31 @@ class ProcessMemory:
     def free(self, address: int) -> None:
         if address:
             kernel32.VirtualFreeEx(self.handle, ctypes.c_void_p(address), 0, MEM_RELEASE)
+
+    def execute(self, address: int, parameter: int = 0, timeout_ms: int = 5000) -> int:
+        thread_id = DWORD()
+        thread = kernel32.CreateRemoteThread(
+            self.handle,
+            None,
+            0,
+            ctypes.c_void_p(address),
+            ctypes.c_void_p(parameter),
+            0,
+            ctypes.byref(thread_id),
+        )
+        if not thread:
+            raise win_error(f"无法启动远程线程 0x{address:X}")
+        try:
+            wait = kernel32.WaitForSingleObject(thread, timeout_ms)
+            if wait == WAIT_TIMEOUT:
+                raise TrainerError("远程代码执行超时")
+            if wait != WAIT_OBJECT_0:
+                raise win_error("等待远程线程失败")
+            exit_code = DWORD()
+            check_bool(kernel32.GetExitCodeThread(thread, ctypes.byref(exit_code)), "读取远程线程结果失败")
+            return int(exit_code.value)
+        finally:
+            kernel32.CloseHandle(thread)
 
     def scan(self, base: int, size: int, pattern: bytes) -> int | None:
         chunk_size = 0x100000
@@ -886,6 +1456,346 @@ def get_module_info(pid: int, module_name: str) -> ModuleInfo:
 
 def repo_root_dir() -> str:
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def read_le_u16(data: bytes, offset: int) -> int:
+    return struct.unpack_from("<H", data, offset)[0]
+
+
+def read_le_u32(data: bytes, offset: int) -> int:
+    return struct.unpack_from("<I", data, offset)[0]
+
+
+def read_le_u64(data: bytes, offset: int) -> int:
+    return struct.unpack_from("<Q", data, offset)[0]
+
+
+def parse_entities_payload(data: bytes) -> EntityFilePayload:
+    if data[:4] != ENTITY_FILE_MAGIC:
+        raise TrainerError("entities payload 不是 enty 格式")
+
+    cursor = 4
+    version = read_le_u16(data, cursor)
+    cursor += 2
+    header_value = read_le_u64(data, cursor)
+    cursor += 8
+    type_count = read_le_u64(data, cursor)
+    cursor += 8
+
+    types: list[EntityFileType] = []
+    for _index in range(type_count):
+        name_len = read_le_u64(data, cursor)
+        cursor += 8
+        name = data[cursor : cursor + name_len].decode("ascii", errors="replace")
+        cursor += name_len
+        aux = read_le_u64(data, cursor)
+        cursor += 8
+        types.append(EntityFileType(name=name, aux=aux))
+
+    record_count = read_le_u32(data, cursor)
+    cursor += 4
+    records: list[EntityFileRecord] = []
+    for _index in range(record_count):
+        entity_id = read_le_u32(data, cursor)
+        cursor += 4
+        type_index = read_le_u16(data, cursor)
+        cursor += 2
+        diff_size = read_le_u32(data, cursor)
+        cursor += 4
+        diff = data[cursor : cursor + diff_size]
+        cursor += diff_size
+        records.append(EntityFileRecord(entity_id=entity_id, type_index=type_index, diff=diff))
+
+    if cursor != len(data):
+        raise TrainerError("entities payload 结尾存在未解析数据")
+    return EntityFilePayload(
+        version=version,
+        header_value=header_value,
+        types=types,
+        records=records,
+    )
+
+
+def build_entities_payload(payload: EntityFilePayload) -> bytes:
+    out = bytearray()
+    out += ENTITY_FILE_MAGIC
+    out += struct.pack("<H", payload.version)
+    out += struct.pack("<Q", payload.header_value)
+    out += struct.pack("<Q", len(payload.types))
+    for item in payload.types:
+        name = item.name.encode("ascii", errors="replace")
+        out += struct.pack("<Q", len(name))
+        out += name
+        out += struct.pack("<Q", item.aux)
+
+    out += struct.pack("<I", len(payload.records))
+    for record in payload.records:
+        out += struct.pack("<IHI", record.entity_id, record.type_index, len(record.diff))
+        out += record.diff
+    return bytes(out)
+
+
+def entity_file_type_name(payload: EntityFilePayload, record: EntityFileRecord) -> str:
+    if record.type_index >= len(payload.types):
+        return ""
+    return payload.types[record.type_index].name
+
+
+def entity_type_package_counts(package_data: bytes) -> dict[str, int]:
+    return {
+        item.name: item.record_count
+        for item in entity_type_package_summaries(package_data)
+    }
+
+
+def entity_type_package_summaries(package_data: bytes) -> list[PackageEntityTypeSummary]:
+    _toc_offset, entries = parse_package(package_data)
+    counts: dict[str, int] = {}
+    levels_by_type: dict[str, set[str]] = {}
+    for entry in entries:
+        if not entry.name.startswith("data-common/") or not entry.name.endswith(".entities"):
+            continue
+        level_name = entry.name[len("data-common/") : -len(".entities")]
+        try:
+            payload = parse_entities_payload(package_data[entry.offset : entry.offset + entry.size])
+        except TrainerError:
+            continue
+        for record in payload.records:
+            name = entity_file_type_name(payload, record)
+            if name:
+                counts[name] = counts.get(name, 0) + 1
+                levels_by_type.setdefault(name, set()).add(level_name)
+    return [
+        PackageEntityTypeSummary(
+            name=name,
+            record_count=count,
+            level_count=len(levels_by_type.get(name, set())),
+        )
+        for name, count in sorted(counts.items(), key=lambda item: item[0].lower())
+    ]
+
+
+def entity_spawn_templates(
+    package_data: bytes,
+    wanted_type: str,
+) -> list[SpawnEntityTemplate]:
+    wanted = wanted_type.lower()
+    _toc_offset, entries = parse_package(package_data)
+    templates: list[SpawnEntityTemplate] = []
+    for entry in entries:
+        if not entry.name.startswith("data-common/") or not entry.name.endswith(".entities"):
+            continue
+        try:
+            payload = parse_entities_payload(package_data[entry.offset : entry.offset + entry.size])
+        except TrainerError:
+            continue
+        level_name = entry.name[len("data-common/") : -len(".entities")]
+        for record in payload.records:
+            if record.type_index >= len(payload.types):
+                continue
+            entity_type = payload.types[record.type_index]
+            if entity_type.name.lower() != wanted:
+                continue
+            templates.append(
+                SpawnEntityTemplate(
+                    level_name=level_name,
+                    entity_type=entity_type.name,
+                    entity_id=record.entity_id,
+                    header_value=payload.header_value,
+                    type_aux=entity_type.aux,
+                    diff=record.diff,
+                )
+            )
+    return templates
+
+
+def choose_spawn_entity_id(payload: EntityFilePayload) -> int:
+    used = {record.entity_id for record in payload.records}
+    candidate = max(used, default=0) + 1
+    while candidate in used:
+        candidate += 1
+    if candidate > 0xFFFFFFFF:
+        raise TrainerError("没有可用的 u32 实体 ID")
+    return candidate
+
+
+def encode_spawn_float(value: float) -> bytes:
+    return b"\x00\x00\x00\x00" + struct.pack("<f", value)
+
+
+def patch_spawn_float_field(diff: bytearray, field_id: int, value: float) -> int:
+    encoded = encode_spawn_float(value)
+    patches = 0
+    if field_id == 0:
+        if len(diff) >= 10 and read_le_u16(diff, 0) == 0:
+            diff[2:10] = encoded
+            patches += 1
+
+    token = b"\xFD" + struct.pack("<H", field_id)
+    start = 0
+    while True:
+        index = diff.find(token, start)
+        if index < 0:
+            return patches
+        value_offset = index + len(token)
+        if value_offset + 8 <= len(diff):
+            diff[value_offset : value_offset + 8] = encoded
+            patches += 1
+        start = index + 1
+
+
+def patch_spawn_coordinates(
+    diff: bytes,
+    values: tuple[float, float, float],
+) -> tuple[bytes, dict[str, int]]:
+    x, y, z = values
+    patched = bytearray(diff)
+    counts = {
+        "base_x": patch_spawn_float_field(patched, SPAWN_COORD_FIELD_IDS["base_x"], x),
+        "out_x": patch_spawn_float_field(patched, SPAWN_COORD_FIELD_IDS["out_x"], x),
+        "base_y": patch_spawn_float_field(patched, SPAWN_COORD_FIELD_IDS["base_y"], y),
+        "out_y": patch_spawn_float_field(patched, SPAWN_COORD_FIELD_IDS["out_y"], y),
+        "base_z": patch_spawn_float_field(patched, SPAWN_COORD_FIELD_IDS["base_z"], z),
+        "out_z": patch_spawn_float_field(patched, SPAWN_COORD_FIELD_IDS["out_z"], z),
+    }
+    return bytes(patched), counts
+
+
+def read_spawn_float_field(diff: bytes, field_id: int) -> float | None:
+    if field_id == 0:
+        if len(diff) >= 10 and read_le_u16(diff, 0) == 0:
+            return struct.unpack("<f", diff[6:10])[0]
+
+    token = b"\xFD" + struct.pack("<H", field_id)
+    index = diff.find(token)
+    if index < 0:
+        return None
+    value_offset = index + len(token)
+    if value_offset + 8 > len(diff):
+        return None
+    return struct.unpack("<f", diff[value_offset + 4 : value_offset + 8])[0]
+
+
+def read_spawn_string_field(diff: bytes, field_id: int) -> str:
+    token = b"\xFD" + struct.pack("<H", field_id)
+    if field_id == 0:
+        index = 0
+        value_offset = 2
+    else:
+        index = diff.find(token)
+        if index < 0:
+            return ""
+        value_offset = index + len(token)
+    if value_offset + 16 > len(diff):
+        return ""
+    old_size = read_le_u64(diff, value_offset)
+    new_size_offset = value_offset + 8 + old_size
+    if new_size_offset + 8 > len(diff):
+        return ""
+    new_size = read_le_u64(diff, new_size_offset)
+    text_offset = new_size_offset + 8
+    if text_offset + new_size > len(diff) or new_size > 512:
+        return ""
+    return diff[text_offset : text_offset + new_size].decode("ascii", errors="replace")
+
+
+def spawn_template_position_text(template: SpawnEntityTemplate) -> str:
+    values = [
+        read_spawn_float_field(template.diff, SPAWN_COORD_FIELD_IDS[axis])
+        for axis in ("base_x", "base_y", "base_z")
+    ]
+    if any(value is None for value in values):
+        return ""
+    return ", ".join(f"{value:.1f}" for value in values if value is not None)
+
+
+def spawn_template_direction_text(template: SpawnEntityTemplate) -> str:
+    theta = read_spawn_float_field(template.diff, 0x000E)
+    if theta is None:
+        theta = read_spawn_float_field(template.diff, 0x000D)
+    return "" if theta is None else f"{theta:.0f} deg"
+
+
+def spawn_template_appearance_text(template: SpawnEntityTemplate) -> str:
+    mesh = read_spawn_string_field(template.diff, 0x001F)
+    if len(mesh) > 36:
+        mesh = mesh[:33] + "..."
+    return mesh
+
+
+def parse_package(data: bytes) -> tuple[int, list[PackageEntry]]:
+    if data[:4] != PACKAGE_MAGIC:
+        raise TrainerError("levels.package 不是 simp 格式")
+    toc_offset = data.rfind(PACKAGE_TOC_MAGIC)
+    if toc_offset < 0:
+        raise TrainerError("levels.package 未找到 toc!")
+
+    count = read_le_u64(data, toc_offset + 8)
+    cursor = toc_offset + 0x40
+    entries: list[PackageEntry] = []
+    for _index in range(count):
+        name_len = read_le_u32(data, cursor)
+        cursor += 4
+        name = data[cursor : cursor + name_len].decode("ascii", errors="replace")
+        cursor += name_len
+        if cursor >= len(data) or data[cursor] != 0:
+            raise TrainerError(f"package TOC 条目 {name!r} 未正确结尾")
+        cursor += 1
+        size = read_le_u64(data, cursor)
+        cursor += 8
+        offset = read_le_u64(data, cursor)
+        cursor += 8
+        entries.append(PackageEntry(name=name, offset=offset, size=size))
+    return toc_offset, entries
+
+
+def rebuild_package(data: bytes, replacements: dict[str, bytes]) -> bytes:
+    toc_offset, entries = parse_package(data)
+    first_payload_offset = min(entry.offset for entry in entries)
+    out = bytearray(data[:first_payload_offset])
+    new_entries: list[PackageEntry] = []
+
+    for entry in entries:
+        payload = replacements.get(entry.name)
+        if payload is None:
+            payload = data[entry.offset : entry.offset + entry.size]
+        new_entries.append(PackageEntry(name=entry.name, offset=len(out), size=len(payload)))
+        out += payload
+
+    toc_header = bytearray(data[toc_offset : toc_offset + 0x40])
+    struct.pack_into("<Q", toc_header, 8, len(new_entries))
+    out += toc_header
+    for entry in new_entries:
+        name = entry.name.encode("ascii", errors="replace")
+        out += struct.pack("<I", len(name))
+        out += name
+        out += b"\x00"
+        out += struct.pack("<QQ", entry.size, entry.offset)
+    return bytes(out)
+
+
+def sanitize_filename_part(value: str) -> str:
+    cleaned = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in value)
+    return cleaned.strip("._") or "item"
+
+
+def normalize_degrees(value: float) -> float:
+    return ((value + 180.0) % 360.0) - 180.0
+
+
+def angle_distance_degrees(a: float, b: float) -> float:
+    return abs(normalize_degrees(a - b))
+
+
+def cardinal_direction_from_degrees(value: float) -> tuple[float, float]:
+    angle = normalize_degrees(value)
+    candidates = (
+        (0.0, (1.0, 0.0)),
+        (90.0, (0.0, 1.0)),
+        (180.0, (-1.0, 0.0)),
+        (-90.0, (0.0, -1.0)),
+    )
+    return min(candidates, key=lambda item: angle_distance_degrees(angle, item[0]))[1]
 
 
 def parse_level_set_file(path: str, known_levels: set[str]) -> list[str]:
@@ -981,6 +1891,10 @@ class LightTrainerBackend:
         self.module: ModuleInfo | None = None
         self.hook: HookInfo | None = None
         self.type_cache: dict[int, EntityTypeInfo] = {}
+        self.spawnable_type_cache: list[SpawnableEntityType] = []
+        self.spawnable_type_cache_key: tuple[int, int] | None = None
+        self.spawn_template_cache: dict[str, list[SpawnEntityTemplate]] = {}
+        self.object_appearance_allocations: dict[int, int] = {}
         self.last_error = ""
         self.last_attach_attempt = 0.0
 
@@ -988,32 +1902,66 @@ class LightTrainerBackend:
     def attached(self) -> bool:
         return self.mem is not None and self.hook is not None and self.mem.is_alive()
 
-    def _adopt_existing_hook(
+    def _build_remote_hook(
         self,
-        mem: ProcessMemory,
+        remote_base: int,
+        module_base: int,
         pick_addr: int,
         gate_addr: int,
-        pick_live: bytes,
-        gate_live: bytes,
-    ) -> HookInfo | None:
-        pick_dst = decode_rel32_jmp(pick_addr, pick_live)
-        gate_dst = decode_rel32_jmp(gate_addr, gate_live)
-        if pick_dst is None or gate_dst is None:
-            return None
-        if pick_live[5:] != (b"\x90" * (PICK_PATCH_LEN - 5)):
-            return None
-        if gate_live[5:] != (b"\x90" * (GATE_PATCH_LEN - 5)):
-            return None
-
-        remote_base = pick_dst
-        code, labels = build_remote_code(
+        post_update_addr: int,
+    ) -> tuple[bytes, dict[str, int]]:
+        return build_remote_code(
             remote_base,
             pick_return=pick_addr + PICK_RETURN_DELTA,
             gate_skip=gate_addr + GATE_SKIP_DELTA,
             gate_through=gate_addr + GATE_THROUGH_DELTA,
             gate_r14_continue=gate_addr + GATE_R14_CONTINUE_DELTA,
+            post_update_return=post_update_addr + MAIN_LOOP_RELOAD_RETURN_DELTA,
+            campaign_load=module_base + CAMPAIGN_LOAD_RVA,
+            campaign_save_current=module_base + CAMPAIGN_SAVE_CURRENT_RVA,
+            entity_manager_save=module_base + ENTITY_MANAGER_SAVE_RVA,
+            runtime_context=module_base + RUNTIME_CONTEXT_RVA,
+            current_entity_manager=module_base + CURRENT_ENTITY_MANAGER_RVA,
+            pending_level_set=module_base + PENDING_LEVEL_SET_RVA,
+            transition_phase=module_base + TRANSITION_PHASE_RVA,
+            save_queue_count=module_base + SAVE_QUEUE_COUNT_RVA,
+            post_update_state=module_base + POST_UPDATE_STATE_RVA,
+        )
+
+    def _adopt_existing_hook(
+        self,
+        mem: ProcessMemory,
+        module_base: int,
+        pick_addr: int,
+        gate_addr: int,
+        post_update_addr: int,
+        pick_live: bytes,
+        gate_live: bytes,
+        post_update_live: bytes,
+    ) -> HookInfo | None:
+        pick_dst = decode_rel32_jmp(pick_addr, pick_live)
+        gate_dst = decode_rel32_jmp(gate_addr, gate_live)
+        post_update_dst = decode_rel32_jmp(post_update_addr, post_update_live)
+        if pick_dst is None or gate_dst is None or post_update_dst is None:
+            return None
+        if pick_live[5:] != (b"\x90" * (PICK_PATCH_LEN - 5)):
+            return None
+        if gate_live[5:] != (b"\x90" * (GATE_PATCH_LEN - 5)):
+            return None
+        if post_update_live[5:] != (b"\x90" * (MAIN_LOOP_RELOAD_HOOK_LEN - 5)):
+            return None
+
+        remote_base = pick_dst
+        code, labels = self._build_remote_hook(
+            remote_base,
+            module_base,
+            pick_addr,
+            gate_addr,
+            post_update_addr,
         )
         if gate_dst != labels["gate_hook"]:
+            return None
+        if post_update_dst != labels["post_update_hook"]:
             return None
 
         code_size = labels["player_ptr"] - remote_base
@@ -1029,11 +1977,13 @@ class LightTrainerBackend:
         return HookInfo(
             pick_addr=pick_addr,
             gate_addr=gate_addr,
+            post_update_addr=post_update_addr,
             remote_base=remote_base,
             remote_size=0x4000,
             labels=labels,
             original_pick=PICK_SIGNATURE,
             original_gate=GATE_SIGNATURE,
+            original_post_update=MAIN_LOOP_RELOAD_HOOK_SIGNATURE,
             owns_hook=False,
         )
 
@@ -1055,25 +2005,39 @@ class LightTrainerBackend:
         remote_base = 0
         pick_addr = 0
         gate_addr = 0
+        post_update_addr = 0
         original_pick = b""
         original_gate = b""
+        original_post_update = b""
         patched_pick = False
         patched_gate = False
+        patched_post_update = False
         try:
             mem = ProcessMemory(pid)
             module = get_module_info(pid, PROCESS_NAME)
             pick_addr = mem.scan(module.base, module.size, PICK_SIGNATURE)
             gate_addr = mem.scan(module.base, module.size, GATE_SIGNATURE)
+            post_update_addr = mem.scan(module.base, module.size, MAIN_LOOP_RELOAD_HOOK_SIGNATURE)
             if pick_addr is None:
                 pick_addr = module.base + PICK_RVA
             if gate_addr is None:
                 gate_addr = module.base + GATE_RVA
+            if post_update_addr is None:
+                post_update_addr = module.base + MAIN_LOOP_RELOAD_HOOK_RVA
 
             original_pick = mem.read(pick_addr, PICK_PATCH_LEN)
             original_gate = mem.read(gate_addr, GATE_PATCH_LEN)
+            original_post_update = mem.read(post_update_addr, MAIN_LOOP_RELOAD_HOOK_LEN)
 
             adopted = self._adopt_existing_hook(
-                mem, pick_addr, gate_addr, original_pick, original_gate
+                mem,
+                module.base,
+                pick_addr,
+                gate_addr,
+                post_update_addr,
+                original_pick,
+                original_gate,
+                original_post_update,
             )
             if adopted is not None:
                 self.pid = pid
@@ -1087,27 +2051,36 @@ class LightTrainerBackend:
                 raise TrainerError("玩家能力捕获位置已被其他补丁占用，重启游戏后再试")
             if original_gate != GATE_SIGNATURE:
                 raise TrainerError("绿光穿墙位置已被其他补丁占用，重启游戏后再试")
+            if original_post_update != MAIN_LOOP_RELOAD_HOOK_SIGNATURE:
+                raise TrainerError("主循环读档挂点已被其他补丁占用，重启游戏后再试")
 
-            remote_size = 0x4000
+            remote_size = 0x5000
             remote_base = mem.alloc_near(pick_addr, remote_size)
-            code, labels = build_remote_code(
+            code, labels = self._build_remote_hook(
                 remote_base,
-                pick_return=pick_addr + PICK_RETURN_DELTA,
-                gate_skip=gate_addr + GATE_SKIP_DELTA,
-                gate_through=gate_addr + GATE_THROUGH_DELTA,
-                gate_r14_continue=gate_addr + GATE_R14_CONTINUE_DELTA,
+                module.base,
+                pick_addr,
+                gate_addr,
+                post_update_addr,
             )
 
             if not is_rel32(pick_addr, labels["pick_hook"]):
                 raise TrainerError("pick hook 距离超过 rel32 范围")
             if not is_rel32(gate_addr, labels["gate_hook"]):
                 raise TrainerError("gate hook 距离超过 rel32 范围")
+            if not is_rel32(post_update_addr, labels["post_update_hook"]):
+                raise TrainerError("reload hook 距离超过 rel32 范围")
 
             mem.write(remote_base, code)
             mem.write_code(pick_addr, make_jmp_patch(pick_addr, labels["pick_hook"], PICK_PATCH_LEN))
             patched_pick = True
             mem.write_code(gate_addr, make_jmp_patch(gate_addr, labels["gate_hook"], GATE_PATCH_LEN))
             patched_gate = True
+            mem.write_code(
+                post_update_addr,
+                make_jmp_patch(post_update_addr, labels["post_update_hook"], MAIN_LOOP_RELOAD_HOOK_LEN),
+            )
+            patched_post_update = True
 
             self.pid = pid
             self.mem = mem
@@ -1115,11 +2088,13 @@ class LightTrainerBackend:
             self.hook = HookInfo(
                 pick_addr=pick_addr,
                 gate_addr=gate_addr,
+                post_update_addr=post_update_addr,
                 remote_base=remote_base,
                 remote_size=remote_size,
                 labels=labels,
                 original_pick=original_pick,
                 original_gate=original_gate,
+                original_post_update=original_post_update,
                 owns_hook=True,
             )
             self.last_error = ""
@@ -1128,6 +2103,8 @@ class LightTrainerBackend:
             if mem is not None:
                 try:
                     if mem.is_alive():
+                        if patched_post_update and post_update_addr and original_post_update:
+                            mem.write_code(post_update_addr, original_post_update)
                         if patched_gate and gate_addr and original_gate:
                             mem.write_code(gate_addr, original_gate)
                         if patched_pick and pick_addr and original_pick:
@@ -1164,6 +2141,11 @@ class LightTrainerBackend:
                     except Exception:
                         pass
                     try:
+                        if mem.read(hook.post_update_addr, 1) == b"\xE9":
+                            mem.write_code(hook.post_update_addr, hook.original_post_update)
+                    except Exception:
+                        pass
+                    try:
                         mem.free(hook.remote_base)
                     except Exception:
                         pass
@@ -1183,6 +2165,10 @@ class LightTrainerBackend:
         self.module = None
         self.hook = None
         self.type_cache.clear()
+        self.spawnable_type_cache = []
+        self.spawnable_type_cache_key = None
+        self.spawn_template_cache = {}
+        self.object_appearance_allocations = {}
 
     def label(self, name: str) -> int:
         if not self.hook:
@@ -1245,6 +2231,86 @@ class LightTrainerBackend:
             return ""
         data = self.mem.read(address, min(int(length), max_len))
         return data.split(b"\0", 1)[0].decode("ascii", errors="replace")
+
+    def object_type_info(self, address: int) -> EntityTypeInfo:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+        type_info = self.entity_type_info(self.mem.read_u64(address + ENTITY_TYPE))
+        if not type_info.name:
+            raise TrainerError(f"目标不是可识别实体 0x{address:X}")
+        return type_info
+
+    def object_direction(self, address: int) -> float | None:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+        self.object_type_info(address)
+        return self.read_object_direction(address)
+
+    def read_object_direction(self, address: int) -> float | None:
+        if not self.mem:
+            return None
+        for offset in (ENTITY_THETA_TARGET, ENTITY_THETA_CURRENT):
+            try:
+                value = self.mem.read_f32(address + offset)
+            except TrainerError:
+                continue
+            if math.isfinite(value):
+                return normalize_degrees(value)
+        return None
+
+    def write_object_direction(self, address: int, value: float) -> None:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+        self.object_type_info(address)
+        if not math.isfinite(value):
+            raise TrainerError("朝向不是有效数字")
+        theta = normalize_degrees(value)
+        self.mem.write_f32(address + ENTITY_THETA_CURRENT, theta)
+        self.mem.write_f32(address + ENTITY_THETA_TARGET, theta)
+
+    def object_appearance(self, address: int) -> str:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+        self.object_type_info(address)
+        return self.read_object_appearance(address)
+
+    def read_object_appearance(self, address: int) -> str:
+        if not self.mem:
+            return ""
+        try:
+            mesh_ptr = self.mem.read_u64(address + ENTITY_MESH)
+        except TrainerError:
+            return ""
+        return self.read_c_string(mesh_ptr, OBJECT_APPEARANCE_MAX_LEN)
+
+    def write_object_appearance(self, address: int, value: str) -> None:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+        self.object_type_info(address)
+        try:
+            data = value.encode("ascii")
+        except UnicodeEncodeError as exc:
+            raise TrainerError("外观只支持 ASCII 资源名") from exc
+        if len(data) > OBJECT_APPEARANCE_MAX_LEN:
+            raise TrainerError(f"外观资源名不能超过 {OBJECT_APPEARANCE_MAX_LEN} 字节")
+
+        new_ptr = self.mem.alloc(len(data) + 1)
+        old_alloc = self.object_appearance_allocations.get(address, 0)
+        try:
+            self.mem.write(new_ptr, data + b"\0")
+            self.mem.write_u64(address + ENTITY_MESH, new_ptr)
+            self.object_appearance_allocations[address] = new_ptr
+            if old_alloc and old_alloc != new_ptr:
+                try:
+                    self.mem.free(old_alloc)
+                except Exception:
+                    pass
+        except Exception:
+            try:
+                self.mem.free(new_ptr)
+            except Exception:
+                pass
+            raise
 
     def read_level_set(self, level_set_ptr: int, level_index: int) -> tuple[str, str, int]:
         if not self.attached or not self.mem:
@@ -1401,11 +2467,10 @@ class LightTrainerBackend:
         )
         return routes[0]
 
-    def request_level_switch(self, target: str) -> LevelSwitchResult:
+    def request_level_route_switch(self, route: RuntimeLevelRoute) -> LevelSwitchResult:
         if not self.attached or not self.mem or not self.module:
             raise TrainerError("尚未连接游戏")
 
-        route = self.resolve_runtime_level_route(target)
         base = self.module.base
         phase = self.mem.read_u64(base + TRANSITION_PHASE_RVA)
         if phase >= 2:
@@ -1426,6 +2491,71 @@ class LightTrainerBackend:
             transition_state=TRANSITION_STATE_SWITCH_LEVEL,
             transition_phase=TRANSITION_PHASE_REQUESTED,
         )
+
+    def request_level_switch(self, target: str) -> LevelSwitchResult:
+        return self.request_level_route_switch(self.resolve_runtime_level_route(target))
+
+    def current_runtime_level_route(self) -> RuntimeLevelRoute:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+
+        base = self.module.base
+        level_set_ptr = self.mem.read_u64(base + CURRENT_LEVEL_SET_RVA)
+        level_index = self.mem.read_u64(base + CURRENT_LEVEL_INDEX_RVA)
+        level_set, level_name, _level_count = self.read_level_set(level_set_ptr, level_index)
+        if not level_set_ptr or not level_name:
+            raise TrainerError("当前关卡未知")
+
+        return RuntimeLevelRoute(
+            level_set=level_set,
+            level_index=int(level_index),
+            level_name=level_name,
+            level_set_ptr=level_set_ptr,
+        )
+
+    def current_campaign_name(self) -> str:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+        name_len = self.mem.read_u64(self.module.base + CURRENT_CAMPAIGN_NAME_RVA)
+        name_ptr = self.mem.read_u64(self.module.base + CURRENT_CAMPAIGN_NAME_RVA + 8)
+        name = self.read_len_string(name_ptr, name_len, 256)
+        if not name:
+            raise TrainerError("当前存档名未知，不能重载")
+        return name
+
+    def reload_current_save_status(self) -> int:
+        if not self.attached or not self.mem:
+            return RELOAD_STATUS_IDLE
+        return self.mem.read_u32(self.label("reload_status"))
+
+    def reload_current_save_status_text(self) -> str:
+        status = self.reload_current_save_status()
+        return RELOAD_STATUS_MESSAGES.get(status, f"状态 {status}")
+
+    def queue_current_save_reload(self) -> str:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+        campaign_name = self.current_campaign_name()
+        try:
+            name_data = campaign_name.encode("ascii")
+        except UnicodeEncodeError as exc:
+            raise TrainerError("当前存档名包含非 ASCII 字符，不能安全重载") from exc
+        if len(name_data) >= 256:
+            raise TrainerError("当前存档名过长，不能安全重载")
+
+        phase = self.mem.read_u64(self.module.base + TRANSITION_PHASE_RVA)
+        if phase >= 2:
+            raise TrainerError(f"游戏正在过渡中（phase={phase}），稍后再试")
+
+        buffer_addr = self.label("campaign_name_buffer")
+        self.mem.write(buffer_addr, name_data + b"\0" + (b"\0" * (255 - len(name_data))))
+        self.mem.write_u64(self.label("campaign_name_len"), len(name_data))
+        self.mem.write_u64(self.label("campaign_name_ptr"), buffer_addr)
+        self.mem.write_u32(self.label("reload_status"), RELOAD_STATUS_QUEUED)
+        self.mem.write_u8(self.label("reload_requested"), 1)
+        current_count = self.mem.read_counter(self.label("reload_request_count"))
+        self.mem.write_u64(self.label("reload_request_count"), current_count + 1)
+        return campaign_name
 
     def current_level_state(self) -> LevelState:
         if not self.attached or not self.mem or not self.module:
@@ -1455,6 +2585,125 @@ class LightTrainerBackend:
             pending_level_index=int(pending_index),
             transition_state=int(transition_state),
             transition_phase=int(transition_phase),
+        )
+
+    def game_root_dir(self) -> str:
+        if self.module:
+            return os.path.dirname(self.module.path)
+
+        candidates = [
+            os.path.dirname(repo_root_dir()),
+            os.getcwd(),
+            os.path.dirname(os.getcwd()),
+            os.path.dirname(os.path.dirname(os.getcwd())),
+        ]
+        seen: set[str] = set()
+        for path in candidates:
+            path = os.path.abspath(path)
+            if path in seen:
+                continue
+            seen.add(path)
+            if os.path.exists(os.path.join(path, "data", "levels.package")):
+                return path
+        raise TrainerError("尚未连接游戏，且无法从当前目录推断游戏安装目录")
+
+    def levels_package_path(self) -> str:
+        path = os.path.join(self.game_root_dir(), "data", "levels.package")
+        if not os.path.exists(path):
+            raise TrainerError(f"未找到 levels.package：{path}")
+        return path
+
+    def spawn_output_dir(self) -> str:
+        game_root = self.game_root_dir()
+        candidates = [
+            os.path.join(game_root, "sinkinghero", "analysis_out"),
+            os.path.join(game_root, "analysis_out"),
+            os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)),
+        ]
+        for path in candidates:
+            try:
+                os.makedirs(path, exist_ok=True)
+                return path
+            except OSError:
+                continue
+        raise TrainerError("无法创建输出目录")
+
+    def create_spawn_package_copy(
+        self,
+        template_type: str,
+        template_id: int,
+        values: tuple[float, float, float],
+    ) -> EntitySpawnResult:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+        if not template_type:
+            raise TrainerError("选中对象没有可识别类型")
+        if not all(math.isfinite(value) and abs(value) <= COORD_LIMIT for value in values):
+            raise TrainerError("目标坐标超出允许范围")
+
+        level = self.current_level_state()
+        if not level.level_name:
+            raise TrainerError("当前关卡名未知")
+
+        package_path = self.levels_package_path()
+        with open(package_path, "rb") as fh:
+            package_data = fh.read()
+
+        entry_name = f"data-common/{level.level_name}.entities"
+        _toc_offset, entries = parse_package(package_data)
+        entry = next((item for item in entries if item.name == entry_name), None)
+        if entry is None:
+            raise TrainerError(f"levels.package 中没有 {entry_name}")
+
+        entities_data = package_data[entry.offset : entry.offset + entry.size]
+        payload = parse_entities_payload(entities_data)
+        old_record_count = len(payload.records)
+        template = None
+        for record in payload.records:
+            if record.entity_id != template_id:
+                continue
+            if entity_file_type_name(payload, record) != template_type:
+                continue
+            template = record
+            break
+        if template is None:
+            raise TrainerError(
+                f"当前关卡资源里找不到 {template_type} 0x{template_id:X}，"
+                "可换一个同类型对象做模板"
+            )
+
+        new_id = choose_spawn_entity_id(payload)
+        diff, patch_counts = patch_spawn_coordinates(template.diff, values)
+        payload.records.append(
+            EntityFileRecord(
+                entity_id=new_id,
+                type_index=template.type_index,
+                diff=diff,
+            )
+        )
+        patched_entities = build_entities_payload(payload)
+        patched_package = rebuild_package(package_data, {entry_name: patched_entities})
+
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        out_name = (
+            f"levels_{sanitize_filename_part(level.level_name)}_"
+            f"{sanitize_filename_part(template_type)}_{new_id:08X}_{timestamp}.package"
+        )
+        output_path = os.path.join(self.spawn_output_dir(), out_name)
+        with open(output_path, "wb") as fh:
+            fh.write(patched_package)
+
+        return EntitySpawnResult(
+            level_name=level.level_name,
+            entity_type=template_type,
+            template_id=template_id,
+            new_id=new_id,
+            output_path=output_path,
+            old_record_count=old_record_count,
+            new_record_count=len(payload.records),
+            old_package_size=len(package_data),
+            new_package_size=len(patched_package),
+            patch_counts=patch_counts,
         )
 
     def console_switch_info(self) -> ConsoleSwitchInfo:
@@ -1490,41 +2739,251 @@ class LightTrainerBackend:
         self.type_cache[type_ptr] = info
         return info
 
+    def package_entity_type_counts(self) -> dict[str, int]:
+        package_path = self.levels_package_path()
+        with open(package_path, "rb") as fh:
+            return entity_type_package_counts(fh.read())
+
+    def package_entity_type_summaries(self) -> list[PackageEntityTypeSummary]:
+        package_path = self.levels_package_path()
+        with open(package_path, "rb") as fh:
+            return entity_type_package_summaries(fh.read())
+
+    def scan_entity_type_table(self) -> list[EntityTypeInfo]:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+
+        base = self.module.base
+        module_end = base + self.module.size
+        found: dict[int, EntityTypeInfo] = {}
+        chunk_size = 0x100000
+        tail = b""
+        tail_base = base
+        for chunk_offset in range(0, self.module.size, chunk_size):
+            read_size = min(chunk_size, self.module.size - chunk_offset)
+            chunk_base = base + chunk_offset
+            try:
+                chunk = self.mem.read(chunk_base, read_size)
+            except TrainerError:
+                tail = b""
+                tail_base = chunk_base + read_size
+                continue
+            data = tail + chunk
+            data_base = tail_base if tail else chunk_base
+            scan_end = max(0, len(data) - 0x20 + 1)
+            for offset in range(0, scan_end, 8):
+                if read_le_u32(data, offset) != ENTITY_KIND_ENTITY:
+                    continue
+                type_id = read_le_u32(data, offset + ENTITY_TYPE_ID)
+                type_size = read_le_u32(data, offset + ENTITY_TYPE_SIZE)
+                name_len = read_le_u64(data, offset + ENTITY_TYPE_NAME_LEN)
+                name_ptr = read_le_u64(data, offset + ENTITY_TYPE_NAME)
+                if not (0 < type_id < 0x10000):
+                    continue
+                if not (0x80 <= type_size <= 0x4000):
+                    continue
+                if not (0 < name_len <= MAX_ENTITY_TYPE_NAME_LEN):
+                    continue
+                if not (base <= name_ptr < module_end):
+                    continue
+                try:
+                    name = self.read_len_string(name_ptr, int(name_len), MAX_ENTITY_TYPE_NAME_LEN)
+                except TrainerError:
+                    continue
+                if not name or len(name) != name_len:
+                    continue
+                if not all(ch.isalnum() or ch in "._-" for ch in name):
+                    continue
+
+                address = data_base + offset
+                info = EntityTypeInfo(address, type_id, type_size, name)
+                cached = found.get(type_id)
+                if cached is None or address < cached.address:
+                    found[type_id] = info
+                    self.type_cache[address] = info
+
+            tail = data[-0x20:]
+            tail_base = data_base + len(data) - len(tail)
+
+        return sorted(found.values(), key=lambda item: item.name.lower())
+
+    def current_entity_type_counts(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        try:
+            objects = self.coordinate_objects()
+        except TrainerError:
+            return counts
+        for record in objects:
+            name = record.type_info.name
+            if name:
+                counts[name] = counts.get(name, 0) + 1
+        return counts
+
+    def spawnable_entity_types(self, refresh: bool = False) -> list[SpawnableEntityType]:
+        cache_key = (self.pid or 0, self.module.base if self.module else 0)
+        if not refresh and self.spawnable_type_cache and self.spawnable_type_cache_key == cache_key:
+            return self.spawnable_type_cache
+
+        live_counts = self.current_entity_type_counts() if self.attached else {}
+        package_summaries: dict[str, PackageEntityTypeSummary] = {}
+        try:
+            package_summaries = {
+                item.name: item for item in self.package_entity_type_summaries()
+            }
+        except TrainerError:
+            package_summaries = {}
+
+        runtime_types = {}
+        if self.attached and self.mem and self.module:
+            runtime_types = {
+                info.name: info for info in self.scan_entity_type_table() if info.name
+            }
+        all_names = set(package_summaries) | set(runtime_types) | set(live_counts)
+        if not all_names:
+            raise TrainerError("尚未连接游戏，且未能读取 levels.package 实体目录")
+        types = []
+        seen_names: set[str] = set()
+        for name in sorted(all_names, key=str.lower):
+            if not name or name in seen_names:
+                continue
+            seen_names.add(name)
+            info = runtime_types.get(name)
+            package = package_summaries.get(name)
+            types.append(
+                SpawnableEntityType(
+                    name=name,
+                    address=info.address if info else 0,
+                    type_id=info.type_id if info else 0,
+                    type_size=info.type_size if info else 0,
+                    live_count=live_counts.get(name, 0),
+                    package_count=package.record_count if package else 0,
+                    level_count=package.level_count if package else 0,
+                    runtime=info is not None,
+                )
+            )
+
+        types.sort(
+            key=lambda item: (
+                item.package_count == 0,
+                not item.runtime,
+                item.name.lower(),
+            )
+        )
+        self.spawnable_type_cache = types
+        self.spawnable_type_cache_key = cache_key
+        return types
+
+    def spawn_templates_for_type(self, entity_type: str) -> list[SpawnEntityTemplate]:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+        if not entity_type:
+            return []
+        cache_key = entity_type.lower()
+        templates = self.spawn_template_cache.get(cache_key)
+        if templates is None:
+            package_path = self.levels_package_path()
+            with open(package_path, "rb") as fh:
+                templates = entity_spawn_templates(fh.read(), entity_type)
+            self.spawn_template_cache[cache_key] = templates
+
+        current_level = ""
+        try:
+            current_level = self.current_level_state().level_name
+        except TrainerError:
+            current_level = ""
+        return sorted(
+            templates,
+            key=lambda item: (
+                bool(current_level) and item.level_name != current_level,
+                item.level_name.lower(),
+                item.entity_id,
+                len(item.diff),
+            ),
+        )
+
     def current_level_ptr(self) -> int:
         if not self.attached or not self.mem:
             raise TrainerError("尚未连接游戏")
-        player = self.player_ptr()
-        if not player:
-            raise TrainerError("尚未捕获玩家实体")
-        level = self.mem.read_u64(player + PLAYER_LEVEL)
+        level = 0
+        if self.module:
+            level = self.mem.read_u64(self.module.base + CURRENT_ENTITY_MANAGER_RVA)
+        if not level:
+            player = self.player_ptr()
+            if player:
+                level = self.mem.read_u64(player + PLAYER_LEVEL)
         if not level:
             raise TrainerError("尚未找到当前关卡")
         return level
 
-    def player_xyz(self) -> tuple[float, float, float]:
+    def player_entity_ptr(self) -> int:
         if not self.attached or not self.mem:
             raise TrainerError("尚未连接游戏")
         player = self.player_ptr()
-        if not player:
-            raise TrainerError("尚未捕获玩家实体")
+        if player:
+            return player
+
+        level = self.current_level_ptr()
+        count = self.mem.read_u64(level + LEVEL_OBJECT_COUNT)
+        array = self.mem.read_u64(level + LEVEL_OBJECT_ARRAY)
+        if count <= 0 or not array:
+            raise TrainerError("当前关卡没有对象列表")
+        if count > MAX_LEVEL_OBJECT_COUNT:
+            raise TrainerError(f"对象数量异常：{count}")
+
+        for index in range(int(count)):
+            try:
+                address = self.mem.read_u64(array + index * 8)
+                if not address:
+                    continue
+                type_info = self.entity_type_info(self.mem.read_u64(address + ENTITY_TYPE))
+                if type_info.name == "Guy":
+                    return address
+            except TrainerError:
+                continue
+        raise TrainerError("尚未捕获玩家实体，且当前对象列表没有 Guy")
+
+    def player_xyz(self) -> tuple[float, float, float]:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+        player = self.player_entity_ptr()
         return tuple(self.mem.read_f32(player + offset) for offset in PLAYER_COORD_OFFSETS)
+
+    def player_front_xyz(self) -> tuple[float, float, float]:
+        if not self.attached or not self.mem:
+            raise TrainerError("尚未连接游戏")
+        player = self.player_entity_ptr()
+        px, py, pz = (self.mem.read_f32(player + offset) for offset in PLAYER_COORD_OFFSETS)
+        theta = self.mem.read_f32(player + PLAYER_THETA_TARGET)
+        if not math.isfinite(theta):
+            z = self.mem.read_f32(player + ENTITY_ORIENTATION_Z)
+            w = self.mem.read_f32(player + ENTITY_ORIENTATION_W)
+            if not math.isfinite(z) or not math.isfinite(w) or abs(z) + abs(w) < 1e-6:
+                raise TrainerError("无法识别玩家朝向")
+            theta = math.degrees(2.0 * math.atan2(z, w))
+
+        dx, dy = cardinal_direction_from_degrees(theta)
+        return (
+            float(round(px + dx * FRONT_GRID_STEP)),
+            float(round(py + dy * FRONT_GRID_STEP)),
+            pz,
+        )
 
     def write_player_xyz(self, values: tuple[float, float, float]) -> None:
         if not self.attached or not self.mem:
             raise TrainerError("尚未连接游戏")
-        player = self.player_ptr()
-        if not player:
-            raise TrainerError("尚未捕获玩家实体")
+        player = self.player_entity_ptr()
         self.mem.write(player, struct.pack("<fff", *values))
 
     def coordinate_objects(self) -> list[CoordinateObject]:
         if not self.attached or not self.mem:
             raise TrainerError("尚未连接游戏")
 
-        player = self.player_ptr()
-        if not player:
-            raise TrainerError("尚未捕获玩家实体")
-        px, py, pz = self.player_xyz()
+        try:
+            player = self.player_entity_ptr()
+            px, py, pz = (self.mem.read_f32(player + offset) for offset in PLAYER_COORD_OFFSETS)
+        except TrainerError:
+            player = 0
+            px, py, pz = (0.0, 0.0, 0.0)
         level = self.current_level_ptr()
         count = self.mem.read_u64(level + LEVEL_OBJECT_COUNT)
         array = self.mem.read_u64(level + LEVEL_OBJECT_ARRAY)
@@ -1553,6 +3012,8 @@ class LightTrainerBackend:
                     entity_id = self.mem.read_u32(address + ENTITY_ID)
                 except TrainerError:
                     entity_id = 0
+                direction = self.read_object_direction(address)
+                appearance = self.read_object_appearance(address)
                 distance = math.sqrt((x - px) * (x - px) + (y - py) * (y - py) + (z - pz) * (z - pz))
                 objects.append(
                     CoordinateObject(
@@ -1562,6 +3023,8 @@ class LightTrainerBackend:
                         entity_id=entity_id,
                         type_info=type_info,
                         position=(x, y, z),
+                        direction=direction,
+                        appearance=appearance,
                         distance=distance,
                         is_player=address == player,
                     )
@@ -1584,18 +3047,149 @@ class LightTrainerBackend:
             raise TrainerError("尚未连接游戏")
         if not all(math.isfinite(value) and abs(value) <= COORD_LIMIT for value in values):
             raise TrainerError("对象坐标超出允许范围")
-        type_info = self.entity_type_info(self.mem.read_u64(address + ENTITY_TYPE))
-        if not type_info.name:
-            raise TrainerError(f"目标不是可识别实体 0x{address:X}")
+        self.object_type_info(address)
         self.mem.write(address, struct.pack("<fff", *values))
 
     def object_xyz(self, address: int) -> tuple[float, float, float]:
         if not self.attached or not self.mem:
             raise TrainerError("尚未连接游戏")
-        type_info = self.entity_type_info(self.mem.read_u64(address + ENTITY_TYPE))
-        if not type_info.name:
-            raise TrainerError(f"目标不是可识别实体 0x{address:X}")
+        self.object_type_info(address)
         return tuple(self.mem.read_f32(address + offset) for offset in PLAYER_COORD_OFFSETS)
+
+    def next_runtime_entity_id(self, manager: int) -> int:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+
+        counter_addr = self.module.base + SPAWN_DYNAMIC_ENTITY_ID_RVA
+        counter = self.mem.read_u32(counter_addr) & 0x000FFFFF
+        count = self.mem.read_u64(manager + LEVEL_OBJECT_COUNT)
+        array = self.mem.read_u64(manager + LEVEL_OBJECT_ARRAY)
+        if count > MAX_LEVEL_OBJECT_COUNT:
+            raise TrainerError(f"对象数量异常：{count}")
+
+        used: set[int] = set()
+        if array:
+            for index in range(int(count)):
+                try:
+                    address = self.mem.read_u64(array + index * 8)
+                    if address:
+                        used.add(self.mem.read_u32(address + ENTITY_ID))
+                except TrainerError:
+                    continue
+
+        for _attempt in range(0x100000):
+            entity_id = SPAWN_DYNAMIC_ENTITY_ID_MASK | counter
+            counter = (counter + 1) & 0x000FFFFF
+            if entity_id not in used:
+                self.mem.write_u32(counter_addr, counter)
+                return entity_id
+        raise TrainerError("没有可用的动态实体 ID")
+
+    def spawn_runtime_entity(
+        self,
+        type_info: EntityTypeInfo | SpawnableEntityType,
+        values: tuple[float, float, float],
+        template: SpawnEntityTemplate,
+    ) -> RuntimeEntitySpawnResult:
+        if not self.attached or not self.mem or not self.module:
+            raise TrainerError("尚未连接游戏")
+        if not type_info.name or not type_info.address:
+            raise TrainerError("选中对象没有可识别类型")
+        if not (self.module.base <= type_info.address < self.module.base + self.module.size):
+            raise TrainerError(f"对象类型地址异常 0x{type_info.address:X}")
+        if not all(math.isfinite(value) and abs(value) <= COORD_LIMIT for value in values):
+            raise TrainerError("目标坐标超出允许范围")
+
+        if template.entity_type.lower() != type_info.name.lower():
+            raise TrainerError(
+                f"属性模板类型不匹配：{template.entity_type} != {type_info.name}"
+            )
+        if not template.diff:
+            raise TrainerError("属性模板 diff 为空，不能可靠生成")
+
+        diff, _patch_counts = patch_spawn_coordinates(template.diff, values)
+        manager = self.current_level_ptr()
+        before_live = self.mem.read_u64(manager + LEVEL_OBJECT_COUNT)
+        if before_live > MAX_LEVEL_OBJECT_COUNT:
+            raise TrainerError(f"对象数量异常：{before_live}")
+        entity_id = self.next_runtime_entity_id(manager)
+
+        remote_base = 0
+        try:
+            remote_size = max(
+                SPAWN_REMOTE_BLOCK_SIZE,
+                align_up(0x1000 + SPAWN_REQ_SIZE + len(diff) + 0x100, 0x1000),
+            )
+            remote_base = self.mem.alloc(remote_size)
+            code, _labels = build_runtime_spawn_code(remote_base)
+            request_addr = remote_base + align_up(len(code), 16)
+            diff_addr = request_addr + align_up(SPAWN_REQ_SIZE, 16)
+            if diff_addr + len(diff) > remote_base + remote_size:
+                raise TrainerError("即时生成远程代码块过小")
+
+            request = bytearray(SPAWN_REQ_SIZE)
+            base = self.module.base
+            struct.pack_into("<Q", request, SPAWN_REQ_CTX, base + RUNTIME_CONTEXT_RVA)
+            struct.pack_into("<Q", request, SPAWN_REQ_MANAGER, manager)
+            struct.pack_into("<Q", request, SPAWN_REQ_TYPE, type_info.address)
+            struct.pack_into("<I", request, SPAWN_REQ_ENTITY_ID, entity_id)
+            struct.pack_into("<fff", request, SPAWN_REQ_X, *values)
+            struct.pack_into("<I", request, SPAWN_REQ_STATUS, 0xFFFFFFFF)
+            struct.pack_into("<Q", request, SPAWN_REQ_CREATE_FUNC, base + SPAWN_CREATE_ENTITY_RVA)
+            struct.pack_into("<Q", request, SPAWN_REQ_INIT_FUNC, base + SPAWN_INIT_ENTITY_RVA)
+            struct.pack_into("<Q", request, SPAWN_REQ_REGISTER_FUNC, base + SPAWN_REGISTER_ENTITY_RVA)
+            struct.pack_into("<Q", request, SPAWN_REQ_APPLY_DIFF_FUNC, base + SPAWN_APPLY_DIFF_RVA)
+            struct.pack_into("<Q", request, SPAWN_REQ_DIFF_SIZE, len(diff))
+            struct.pack_into("<Q", request, SPAWN_REQ_DIFF_PTR, diff_addr)
+            struct.pack_into("<Q", request, SPAWN_REQ_HEADER_VALUE, template.header_value)
+            struct.pack_into("<Q", request, SPAWN_REQ_TYPE_AUX, template.type_aux)
+
+            self.mem.write(remote_base, code)
+            self.mem.write(request_addr, bytes(request))
+            self.mem.write(diff_addr, diff)
+            exit_code = self.mem.execute(
+                remote_base,
+                request_addr,
+                timeout_ms=SPAWN_REMOTE_TIMEOUT_MS,
+            )
+            response = self.mem.read(request_addr, SPAWN_REQ_SIZE)
+        finally:
+            if remote_base:
+                self.mem.free(remote_base)
+
+        status = struct.unpack_from("<I", response, SPAWN_REQ_STATUS)[0]
+        if exit_code != SPAWN_STATUS_OK or status != SPAWN_STATUS_OK:
+            status_text = SPAWN_STATUS_MESSAGES.get(status, f"status={status}")
+            raise TrainerError(f"即时生成失败：{status_text}，线程返回 {exit_code}")
+
+        entity_address = struct.unpack_from("<Q", response, SPAWN_REQ_OUT_ENTITY)[0]
+        before_count = struct.unpack_from("<Q", response, SPAWN_REQ_BEFORE_COUNT)[0]
+        after_count = struct.unpack_from("<Q", response, SPAWN_REQ_AFTER_COUNT)[0]
+        entity_id = struct.unpack_from("<I", response, SPAWN_REQ_ENTITY_ID)[0]
+        if not entity_address:
+            raise TrainerError("即时生成失败：未返回实体地址")
+
+        live_after = self.mem.read_u64(manager + LEVEL_OBJECT_COUNT)
+        if live_after > MAX_LEVEL_OBJECT_COUNT:
+            raise TrainerError(f"生成后对象数量异常：{live_after}")
+        listed = live_after > before_live
+        if after_count and after_count != live_after:
+            after_count = live_after
+        elif not after_count:
+            after_count = live_after
+
+        position = tuple(self.mem.read_f32(entity_address + offset) for offset in PLAYER_COORD_OFFSETS)
+        return RuntimeEntitySpawnResult(
+            entity_type=type_info.name,
+            entity_id=entity_id,
+            address=entity_address,
+            position=(position[0], position[1], position[2]),
+            before_count=int(before_count or before_live),
+            after_count=int(after_count),
+            listed=listed,
+            template_level=template.level_name,
+            template_id=template.entity_id,
+        )
 
     def open_nearest_freezer(self, max_distance: float = FREEZER_OPEN_RADIUS) -> FreezerOpenResult:
         if not self.attached or not self.mem or not self.module:
@@ -1668,6 +3262,15 @@ class LightTrainerBackend:
             self.mem.read_counter(self.label("force_count")),
         )
 
+    def reload_counters(self) -> tuple[int, int, int]:
+        if not self.attached or not self.mem:
+            return (0, 0, RELOAD_STATUS_IDLE)
+        return (
+            self.mem.read_counter(self.label("reload_request_count")),
+            self.mem.read_counter(self.label("reload_done_count")),
+            self.mem.read_u32(self.label("reload_status")),
+        )
+
 
 class TrainerApp:
     def __init__(
@@ -1691,6 +3294,8 @@ class TrainerApp:
         self.object_scope_var = tk.StringVar(value=OBJECT_SCOPE_ALL)
         self.object_radius_var = tk.StringVar(value=f"{OBJECT_RADIUS_DEFAULT:.3f}")
         self.object_coord_vars = {axis: tk.StringVar(value="0.000") for axis in COORD_AXES}
+        self.object_direction_var = tk.StringVar(value="")
+        self.object_appearance_var = tk.StringVar(value="")
         self.object_records: list[CoordinateObject] = []
         self.object_record_by_address: dict[int, CoordinateObject] = {}
         self.object_tree: ttk.Treeview | None = None
@@ -1699,6 +3304,14 @@ class TrainerApp:
         self.object_radius_spinbox: ttk.Spinbox | None = None
         self.object_status_label: ttk.Label | None = None
         self.object_edit_label: ttk.Label | None = None
+        self.object_spawn_label: ttk.Label | None = None
+        self.spawn_filter_var = tk.StringVar()
+        self.spawn_type_records: list[SpawnableEntityType] = []
+        self.spawn_type_by_name: dict[str, SpawnableEntityType] = {}
+        self.spawn_type_tree: ttk.Treeview | None = None
+        self.spawn_template_records: list[SpawnEntityTemplate] = []
+        self.spawn_template_by_iid: dict[str, SpawnEntityTemplate] = {}
+        self.spawn_template_tree: ttk.Treeview | None = None
         self.level_routes = build_level_lookup()
         self.level_names = ordered_level_names(self.level_routes)
         self.level_completion_states: dict[str, LevelCompletion] = {}
@@ -1786,7 +3399,7 @@ class TrainerApp:
         object_tab = ttk.Frame(notebook, padding=(8, 10, 8, 8))
         level_tab = ttk.Frame(notebook, padding=(8, 10, 8, 8))
         notebook.add(main_tab, text="能力")
-        notebook.add(object_tab, text="对象坐标")
+        notebook.add(object_tab, text="对象")
         notebook.add(level_tab, text="关卡")
 
         self._build_main_tab(main_tab)
@@ -1930,33 +3543,35 @@ class TrainerApp:
         table_frame.columnconfigure(0, weight=1)
         table_frame.rowconfigure(0, weight=1)
 
-        columns = ("mark", "source", "type", "address", "id", "x", "y", "z", "distance")
+        columns = ("mark", "source", "type", "id", "position", "direction", "distance")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", selectmode="browse", height=10)
         headings = {
             "mark": "",
             "source": "数组",
             "type": "类型",
-            "address": "地址",
             "id": "ID",
-            "x": "X",
-            "y": "Y",
-            "z": "Z",
+            "position": "坐标",
+            "direction": "朝向",
             "distance": "距离",
         }
         widths = {
             "mark": 26,
             "source": 64,
             "type": 150,
-            "address": 132,
             "id": 96,
-            "x": 86,
-            "y": 86,
-            "z": 86,
+            "position": 230,
+            "direction": 74,
             "distance": 78,
         }
         for column in columns:
             tree.heading(column, text=headings[column])
-            tree.column(column, width=widths[column], minwidth=widths[column], anchor="w", stretch=column == "type")
+            tree.column(
+                column,
+                width=widths[column],
+                minwidth=widths[column],
+                anchor="w",
+                stretch=column == "type",
+            )
 
         yscroll = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         xscroll = ttk.Scrollbar(table_frame, orient="horizontal", command=tree.xview)
@@ -1989,6 +3604,118 @@ class TrainerApp:
 
         self.object_edit_label = ttk.Label(frame, text="", style="Small.TLabel", wraplength=840)
         self.object_edit_label.pack(anchor="w", pady=(6, 0), fill="x")
+
+        spawn_box = ttk.Frame(frame)
+        spawn_box.pack(fill="both", expand=True, pady=(8, 0))
+        spawn_row = ttk.Frame(spawn_box)
+        spawn_row.pack(fill="x")
+        ttk.Label(spawn_row, text="刷对象", style="Status.TLabel").pack(side="left", padx=(0, 10))
+        ttk.Label(spawn_row, text="搜索", style="Small.TLabel").pack(side="left")
+        ttk.Entry(spawn_row, textvariable=self.spawn_filter_var, width=24).pack(side="left", padx=(6, 8))
+        self.spawn_filter_var.trace_add("write", lambda *_args: self.populate_spawn_type_tree())
+        ttk.Button(
+            spawn_row,
+            text="刷新类型",
+            command=self.refresh_spawn_types,
+        ).pack(side="left")
+        ttk.Button(
+            spawn_row,
+            text="在玩家面前生成",
+            command=self.spawn_selected_type_runtime,
+        ).pack(side="left", padx=(8, 0))
+        ttk.Button(
+            spawn_row,
+            text="重载当前存档",
+            command=self.reload_current_level_from_object_tab,
+        ).pack(side="left", padx=(8, 0))
+        ttk.Label(
+            spawn_row,
+            text="生成实体后需要点击重载当前存档",
+            style="Small.TLabel",
+            wraplength=260,
+        ).pack(side="left", padx=(8, 0))
+
+        spawn_table = ttk.Frame(spawn_box)
+        spawn_table.pack(fill="both", expand=True, pady=(8, 0))
+        spawn_table.columnconfigure(0, weight=1)
+        spawn_table.rowconfigure(0, weight=1)
+        columns = ("name", "id", "size", "runtime", "loaded", "package", "levels")
+        tree = ttk.Treeview(spawn_table, columns=columns, show="headings", selectmode="browse", height=6)
+        spawn_headings = {
+            "name": "类型",
+            "id": "Type ID",
+            "size": "大小",
+            "runtime": "运行时",
+            "loaded": "当前",
+            "package": "资源记录",
+            "levels": "关卡",
+        }
+        spawn_widths = {
+            "name": 230,
+            "id": 80,
+            "size": 70,
+            "runtime": 58,
+            "loaded": 64,
+            "package": 74,
+            "levels": 54,
+        }
+        for column in columns:
+            tree.heading(column, text=spawn_headings[column])
+            tree.column(column, width=spawn_widths[column], minwidth=spawn_widths[column], anchor="w", stretch=column == "name")
+        yscroll = ttk.Scrollbar(spawn_table, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=yscroll.set)
+        tree.grid(row=0, column=0, sticky="nsew")
+        yscroll.grid(row=0, column=1, sticky="ns")
+        tree.bind("<<TreeviewSelect>>", self.on_spawn_type_selected)
+        tree.bind("<Double-1>", lambda _event: self.spawn_selected_type_runtime())
+        self.spawn_type_tree = tree
+
+        template_table = ttk.Frame(spawn_box)
+        template_table.pack(fill="both", expand=True, pady=(8, 0))
+        template_table.columnconfigure(0, weight=1)
+        template_table.rowconfigure(0, weight=1)
+        template_columns = ("level", "id", "diff", "position", "direction", "appearance")
+        template_tree = ttk.Treeview(
+            template_table,
+            columns=template_columns,
+            show="headings",
+            selectmode="browse",
+            height=5,
+        )
+        template_headings = {
+            "level": "属性模板",
+            "id": "模板ID",
+            "diff": "diff",
+            "position": "原坐标",
+            "direction": "朝向",
+            "appearance": "外观",
+        }
+        template_widths = {
+            "level": 210,
+            "id": 100,
+            "diff": 70,
+            "position": 130,
+            "direction": 70,
+            "appearance": 210,
+        }
+        for column in template_columns:
+            template_tree.heading(column, text=template_headings[column])
+            template_tree.column(
+                column,
+                width=template_widths[column],
+                minwidth=template_widths[column],
+                anchor="w",
+                stretch=column == "level",
+            )
+        template_yscroll = ttk.Scrollbar(template_table, orient="vertical", command=template_tree.yview)
+        template_tree.configure(yscrollcommand=template_yscroll.set)
+        template_tree.grid(row=0, column=0, sticky="nsew")
+        template_yscroll.grid(row=0, column=1, sticky="ns")
+        template_tree.bind("<Double-1>", lambda _event: self.spawn_selected_type_runtime())
+        self.spawn_template_tree = template_tree
+
+        self.object_spawn_label = ttk.Label(spawn_box, text="", style="Small.TLabel", wraplength=840)
+        self.object_spawn_label.pack(anchor="w", pady=(6, 0), fill="x")
 
     def _build_level_tab(self, frame: ttk.Frame) -> None:
         current_box = ttk.Frame(frame)
@@ -2131,6 +3858,35 @@ class TrainerApp:
         for axis, value in zip(COORD_AXES, values):
             self.object_coord_vars[axis].set(f"{value:.3f}")
 
+    def object_direction_value(self) -> float:
+        text = self.object_direction_var.get().strip()
+        if not text:
+            raise TrainerError("朝向不能为空")
+        try:
+            value = float(text)
+        except ValueError as exc:
+            raise TrainerError("朝向不是有效数字") from exc
+        if not math.isfinite(value):
+            raise TrainerError("朝向不是有效数字")
+        return normalize_degrees(value)
+
+    def set_object_direction_value(self, value: float | None) -> None:
+        self.object_direction_var.set("" if value is None else f"{value:.3f}")
+
+    def object_appearance_value(self) -> str:
+        value = self.object_appearance_var.get().strip()
+        try:
+            data = value.encode("ascii")
+        except UnicodeEncodeError as exc:
+            raise TrainerError("外观只支持 ASCII 资源名") from exc
+        if len(data) > OBJECT_APPEARANCE_MAX_LEN:
+            raise TrainerError(f"外观资源名不能超过 {OBJECT_APPEARANCE_MAX_LEN} 字节")
+        return value
+
+    def set_object_property_values(self, record: CoordinateObject) -> None:
+        self.set_object_direction_value(record.direction)
+        self.object_appearance_var.set(record.appearance)
+
     def selected_object_address(self) -> int:
         if not self.object_tree:
             raise TrainerError("对象列表尚未初始化")
@@ -2138,6 +3894,50 @@ class TrainerApp:
         if not selection:
             raise TrainerError("尚未选择对象")
         return int(selection[0], 16)
+
+    def selected_object_record(self) -> CoordinateObject:
+        address = self.selected_object_address()
+        record = self.object_record_by_address.get(address)
+        if record is None:
+            raise TrainerError("选中对象已不在当前列表，请刷新对象")
+        return record
+
+    def selected_spawn_type(self) -> SpawnableEntityType:
+        if not self.spawn_type_tree:
+            raise TrainerError("生成类型列表尚未初始化")
+        selection = self.spawn_type_tree.selection()
+        if not selection:
+            raise TrainerError("请先在生成类型列表里选择一种对象")
+        name = selection[0]
+        item = self.spawn_type_by_name.get(name)
+        if item is None:
+            raise TrainerError("选中的生成类型已失效，请刷新类型")
+        return item
+
+    def selected_spawn_template(self) -> SpawnEntityTemplate:
+        if not self.spawn_template_tree:
+            raise TrainerError("属性模板列表尚未初始化")
+        selection = self.spawn_template_tree.selection()
+        if not selection:
+            raise TrainerError("请先选择一个属性模板")
+        item = self.spawn_template_by_iid.get(selection[0])
+        if item is None:
+            raise TrainerError("选中的属性模板已失效，请刷新类型")
+        return item
+
+    def on_spawn_type_selected(self, _event: object | None = None) -> None:
+        try:
+            spawn_type = self.selected_spawn_type()
+            self.populate_spawn_template_tree(spawn_type)
+        except Exception as exc:
+            self.spawn_template_records = []
+            self.spawn_template_by_iid = {}
+            if self.spawn_template_tree:
+                children = self.spawn_template_tree.get_children()
+                if children:
+                    self.spawn_template_tree.delete(*children)
+            if self.object_spawn_label:
+                self.object_spawn_label.configure(text=f"属性模板：{exc}")
 
     def on_object_scope_changed(self, _event: tk.Event | None = None) -> None:
         self.update_object_radius_state()
@@ -2183,6 +3983,7 @@ class TrainerApp:
             self.populate_object_tree()
             if self.object_status_label:
                 self.object_status_label.configure(text=f"已刷新 {len(self.object_records)} 个对象")
+            self.refresh_spawn_types(silent=True)
         except Exception as exc:
             if self.object_status_label:
                 self.object_status_label.configure(text=f"对象：{exc}")
@@ -2208,6 +4009,7 @@ class TrainerApp:
         for record in records:
             x, y, z = record.position
             iid = f"{record.address:X}"
+            direction = "" if record.direction is None else f"{record.direction:.0f}"
             tree.insert(
                 "",
                 "end",
@@ -2216,11 +4018,9 @@ class TrainerApp:
                     "P" if record.is_player else "",
                     f"{record.source}[{record.index}]",
                     record.type_info.name,
-                    f"0x{record.address:X}",
                     f"0x{record.entity_id:X}",
-                    f"{x:.3f}",
-                    f"{y:.3f}",
-                    f"{z:.3f}",
+                    f"{x:.3f}, {y:.3f}, {z:.3f}",
+                    direction,
                     f"{record.distance:.2f}",
                 ),
             )
@@ -2230,12 +4030,140 @@ class TrainerApp:
         if self.object_status_label:
             self.object_status_label.configure(text=f"显示 {len(records)} / {len(self.object_records)}")
 
+    def refresh_spawn_types(self, silent: bool = False) -> bool:
+        try:
+            self.backend.last_attach_attempt = 0.0
+            self.backend.attach_if_needed()
+            self.spawn_type_records = self.backend.spawnable_entity_types(refresh=True)
+            self.spawn_type_by_name = {
+                item.name: item for item in self.spawn_type_records
+            }
+            self.populate_spawn_type_tree()
+            if self.object_spawn_label and not silent:
+                runtime_count = sum(1 for item in self.spawn_type_records if item.runtime)
+                package_count = sum(1 for item in self.spawn_type_records if item.package_count)
+                self.object_spawn_label.configure(
+                    text=(
+                        f"刷对象：已读取 {len(self.spawn_type_records)} 种类型；"
+                        f"资源包 {package_count} 种，运行时已定位 {runtime_count} 种"
+                    )
+                )
+            return True
+        except Exception as exc:
+            if silent:
+                raise
+            if self.object_spawn_label and not silent:
+                self.object_spawn_label.configure(text=f"刷对象：{exc}")
+            return False
+
+    def populate_spawn_type_tree(self) -> None:
+        if not self.spawn_type_tree:
+            return
+        tree = self.spawn_type_tree
+        selected = ""
+        selection = tree.selection()
+        if selection:
+            selected = selection[0]
+        children = tree.get_children()
+        if children:
+            tree.delete(*children)
+        needle = self.spawn_filter_var.get().strip().lower()
+        records = [
+            item
+            for item in self.spawn_type_records
+            if not needle or needle in item.name.lower()
+        ]
+        for item in records:
+            tree.insert(
+                "",
+                "end",
+                iid=item.name,
+                values=(
+                    item.name,
+                    f"0x{item.type_id:X}" if item.type_id else "",
+                    f"0x{item.type_size:X}" if item.type_size else "",
+                    "是" if item.runtime else "否",
+                    str(item.live_count),
+                    str(item.package_count),
+                    str(item.level_count),
+                ),
+            )
+        if selected and tree.exists(selected):
+            tree.selection_set(selected)
+            tree.see(selected)
+        elif records:
+            tree.selection_set(records[0].name)
+        self.on_spawn_type_selected(None)
+
+    def populate_spawn_template_tree(self, spawn_type: SpawnableEntityType) -> None:
+        if not self.spawn_template_tree:
+            return
+        tree = self.spawn_template_tree
+        selected = ""
+        selection = tree.selection()
+        if selection:
+            selected = selection[0]
+
+        children = tree.get_children()
+        if children:
+            tree.delete(*children)
+        self.spawn_template_records = []
+        self.spawn_template_by_iid = {}
+
+        try:
+            templates = self.backend.spawn_templates_for_type(spawn_type.name)
+        except TrainerError:
+            raise
+        except Exception as exc:
+            raise TrainerError(f"读取属性模板失败：{exc}") from exc
+
+        self.spawn_template_records = templates
+        for index, template in enumerate(templates):
+            iid = f"{index}:{template.level_name}:{template.entity_id:08X}"
+            self.spawn_template_by_iid[iid] = template
+            tree.insert(
+                "",
+                "end",
+                iid=iid,
+                values=(
+                    template.level_name,
+                    f"0x{template.entity_id:X}",
+                    str(len(template.diff)),
+                    spawn_template_position_text(template),
+                    spawn_template_direction_text(template),
+                    spawn_template_appearance_text(template),
+                ),
+            )
+
+        if selected and tree.exists(selected):
+            tree.selection_set(selected)
+            tree.see(selected)
+        elif templates:
+            first = tree.get_children()[0]
+            tree.selection_set(first)
+            tree.see(first)
+
+        if self.object_spawn_label:
+            if templates:
+                source_text = "运行时可生成" if spawn_type.runtime else "仅资源包模板"
+                self.object_spawn_label.configure(
+                    text=(
+                        f"属性模板：{spawn_type.name} 已读取 {len(templates)} 个，"
+                        f"{source_text}；生成时会复用选中模板的方向/变体/外观属性"
+                    )
+                )
+            else:
+                self.object_spawn_label.configure(
+                    text=f"属性模板：{spawn_type.name} 在资源包里没有现成模板，不能可靠即时生成"
+                )
+
     def on_object_selected(self, _event: object | None = None) -> None:
         try:
             address = self.selected_object_address()
             record = self.object_record_by_address.get(address)
             if record is not None:
                 self.set_object_coordinate_values(record.position)
+                self.set_object_property_values(record)
                 if self.object_edit_label:
                     self.object_edit_label.configure(
                         text=f"选中：{record.type_info.name} 0x{record.address:X}"
@@ -2250,10 +4178,16 @@ class TrainerApp:
             self.backend.last_attach_attempt = 0.0
             self.backend.attach_if_needed()
             values = self.backend.object_xyz(address)
+            direction = self.backend.object_direction(address)
+            appearance = self.backend.object_appearance(address)
             self.set_object_coordinate_values(values)
+            self.set_object_direction_value(direction)
+            self.object_appearance_var.set(appearance)
             record = self.object_record_by_address.get(address)
             if record:
                 record.position = values
+                record.direction = direction
+                record.appearance = appearance
             self.populate_object_tree()
             if self.object_edit_label:
                 self.object_edit_label.configure(text=f"对象：已读取 0x{address:X}")
@@ -2277,6 +4211,129 @@ class TrainerApp:
         except Exception as exc:
             if self.object_edit_label:
                 self.object_edit_label.configure(text=f"对象：{exc}")
+
+    def write_selected_object_properties(self) -> None:
+        try:
+            address = self.selected_object_address()
+            direction = self.object_direction_value()
+            appearance = self.object_appearance_value()
+            self.backend.last_attach_attempt = 0.0
+            self.backend.attach_if_needed()
+            self.backend.write_object_direction(address, direction)
+            self.backend.write_object_appearance(address, appearance)
+            record = self.object_record_by_address.get(address)
+            if record:
+                record.direction = direction
+                record.appearance = appearance
+            self.populate_object_tree()
+            if self.object_edit_label:
+                self.object_edit_label.configure(text=f"属性：已写入 0x{address:X}")
+        except Exception as exc:
+            if self.object_edit_label:
+                self.object_edit_label.configure(text=f"属性：{exc}")
+
+    def fill_object_target_from_player(self) -> None:
+        try:
+            self.backend.last_attach_attempt = 0.0
+            self.backend.attach_if_needed()
+            values = self.backend.player_xyz()
+            self.set_object_coordinate_values(values)
+            if self.object_spawn_label:
+                self.object_spawn_label.configure(text="刷对象：目标坐标已设为玩家位置")
+        except Exception as exc:
+            if self.object_spawn_label:
+                self.object_spawn_label.configure(text=f"刷对象：{exc}")
+
+    def spawn_selected_object_runtime(self) -> None:
+        self.spawn_selected_type_runtime()
+
+    def start_current_save_reload(self) -> str:
+        return self.backend.queue_current_save_reload()
+
+    def spawn_selected_type_runtime(self) -> None:
+        try:
+            self.backend.last_attach_attempt = 0.0
+            self.backend.attach_if_needed()
+            if not self.spawn_type_records:
+                self.refresh_spawn_types(silent=True)
+            spawn_type = self.selected_spawn_type()
+            if not spawn_type.runtime or not spawn_type.address:
+                raise TrainerError(
+                    f"{spawn_type.name} 只在资源包里逆向到模板，当前运行时尚未定位类型地址，不能即时生成"
+                )
+            template = self.selected_spawn_template()
+            values = self.backend.player_front_xyz()
+            self.set_object_coordinate_values(values)
+            result = self.backend.spawn_runtime_entity(spawn_type, values, template)
+            try:
+                self.refresh_objects()
+            except Exception:
+                pass
+            if self.object_spawn_label:
+                x, y, z = result.position
+                list_text = "已进入对象列表" if result.listed else "未进入通用对象列表"
+                message = (
+                    f"刷对象：已在玩家前方生成 {result.entity_type} "
+                    f"模板={result.template_level}/0x{result.template_id:X} "
+                    f"ID=0x{result.entity_id:X} 地址=0x{result.address:X} "
+                    f"对象数 {result.before_count}->{result.after_count} {list_text} "
+                    f"坐标=({x:.3f}, {y:.3f}, {z:.3f})"
+                )
+                self.object_spawn_label.configure(text=message)
+            self.debug(
+                f"spawn_runtime type={result.entity_type} id=0x{result.entity_id:X} "
+                f"addr=0x{result.address:X} count={result.before_count}->{result.after_count} "
+                f"listed={result.listed} template={result.template_level}/0x{result.template_id:X}"
+            )
+        except Exception as exc:
+            if self.object_spawn_label:
+                self.object_spawn_label.configure(text=f"刷对象：{exc}")
+
+    def reload_current_level_from_object_tab(self) -> None:
+        try:
+            self.backend.last_attach_attempt = 0.0
+            if not self.backend.attach_if_needed():
+                raise TrainerError(self.backend.last_error or "尚未连接游戏")
+            campaign_name = self.start_current_save_reload()
+            if self.object_spawn_label:
+                self.object_spawn_label.configure(text=f"重载：已请求重新加载当前存档 {campaign_name}")
+        except Exception as exc:
+            self.backend.last_error = str(exc)
+            if self.object_spawn_label:
+                self.object_spawn_label.configure(text=f"重载：{exc}")
+
+    def generate_spawn_package_copy(self) -> None:
+        try:
+            record = self.selected_object_record()
+            if record.is_player:
+                raise TrainerError("不要用玩家实体做刷对象模板")
+            values = self.object_coordinate_values()
+            self.backend.last_attach_attempt = 0.0
+            self.backend.attach_if_needed()
+            result = self.backend.create_spawn_package_copy(
+                record.type_info.name,
+                record.entity_id,
+                values,
+            )
+            counts = ",".join(f"{key}:{value}" for key, value in result.patch_counts.items())
+            if self.object_spawn_label:
+                self.object_spawn_label.configure(
+                    text=(
+                        f"刷对象：已生成 {os.path.normpath(result.output_path)}；"
+                        f"{result.entity_type} 模板=0x{result.template_id:X} "
+                        f"新ID=0x{result.new_id:X} "
+                        f"记录 {result.old_record_count}->{result.new_record_count} "
+                        f"字段 {counts}"
+                    )
+                )
+            self.debug(
+                f"spawn_package level={result.level_name} type={result.entity_type} "
+                f"template=0x{result.template_id:X} new=0x{result.new_id:X} "
+                f"path={result.output_path}"
+            )
+        except Exception as exc:
+            if self.object_spawn_label:
+                self.object_spawn_label.configure(text=f"刷对象：{exc}")
 
     def read_coordinates(self) -> None:
         try:
@@ -2588,6 +4645,7 @@ class TrainerApp:
                     self.backend.sync_flags(self.desired_flags())
             if self.backend.attached and self.tick_count % 20 == 0:
                 self.refresh_level_state(silent=True)
+                self.refresh_reload_status(silent=True)
         except Exception as exc:
             self.backend.last_error = str(exc)
             self.debug(f"tick_exception {type(exc).__name__}")
@@ -2595,6 +4653,27 @@ class TrainerApp:
         if self.tick_count <= 5 or self.tick_count % 20 == 0:
             self.debug("refresh")
         self.root.after(50, self.tick)
+
+    def refresh_reload_status(self, silent: bool = False) -> None:
+        if not self.object_spawn_label or not self.backend.attached:
+            return
+        try:
+            requests, done, status = self.backend.reload_counters()
+        except Exception:
+            return
+        if not requests:
+            return
+        status_text = RELOAD_STATUS_MESSAGES.get(status, f"状态 {status}")
+        if status in (
+            RELOAD_STATUS_RUNNING,
+            RELOAD_STATUS_OK,
+            RELOAD_STATUS_BUSY,
+            RELOAD_STATUS_NO_CAMPAIGN,
+            RELOAD_STATUS_SAVING,
+            RELOAD_STATUS_WAITING_SAVE,
+            RELOAD_STATUS_LOADING,
+        ) or not silent:
+            self.object_spawn_label.configure(text=f"重载：{status_text}（请求 {requests}，完成 {done}）")
 
     def refresh_labels(self) -> None:
         flags = self.desired_flags()
@@ -2632,18 +4711,37 @@ def run_self_test() -> int:
     pick_addr = 0x1402AEF49
     gate_addr = 0x1402AF0CC
     remote_base = 0x140500000
+    post_update_addr = 0x1401CA8B3
     code, labels = build_remote_code(
         remote_base,
         pick_return=pick_addr + PICK_RETURN_DELTA,
         gate_skip=gate_addr + GATE_SKIP_DELTA,
         gate_through=gate_addr + GATE_THROUGH_DELTA,
         gate_r14_continue=gate_addr + GATE_R14_CONTINUE_DELTA,
+        post_update_return=post_update_addr + MAIN_LOOP_RELOAD_RETURN_DELTA,
+        campaign_load=0x140048880,
+        campaign_save_current=0x140154860,
+        entity_manager_save=0x1401B5EA0,
+        runtime_context=0x140731110,
+        current_entity_manager=0x1409ACB50,
+        pending_level_set=0x1409ACF60,
+        transition_phase=0x1409AECD0,
+        save_queue_count=0x1409ACC98,
+        post_update_state=0x14072E9B0,
     )
     assert labels["pick_hook"] == remote_base
     assert "through_enabled" in labels
     assert len(make_jmp_patch(pick_addr, labels["pick_hook"], PICK_PATCH_LEN)) == PICK_PATCH_LEN
     assert len(make_jmp_patch(gate_addr, labels["gate_hook"], GATE_PATCH_LEN)) == GATE_PATCH_LEN
+    assert len(make_jmp_patch(post_update_addr, labels["post_update_hook"], MAIN_LOOP_RELOAD_HOOK_LEN)) == MAIN_LOOP_RELOAD_HOOK_LEN
+    assert "campaign_name_buffer" in labels
     print(f"self-test ok: remote_code={len(code)} bytes labels={len(labels)}")
+
+    spawn_code, spawn_labels = build_runtime_spawn_code(0x140700000)
+    assert spawn_labels["spawn_entry"] == 0x140700000
+    assert "spawn_cleanup" in spawn_labels
+    assert len(spawn_code) < SPAWN_REMOTE_BLOCK_SIZE // 2
+    print(f"self-test ok: spawn_code={len(spawn_code)} bytes labels={len(spawn_labels)}")
 
     exe_path = os.path.join(os.getcwd(), PROCESS_NAME)
     if os.path.exists(exe_path):
@@ -2651,8 +4749,9 @@ def run_self_test() -> int:
             data = fh.read()
         pick_count = data.count(PICK_SIGNATURE)
         gate_count = data.count(GATE_SIGNATURE)
-        print(f"disk AOB: pick={pick_count} gate={gate_count}")
-        if pick_count != 1 or gate_count != 1:
+        post_update_count = data.count(MAIN_LOOP_RELOAD_HOOK_SIGNATURE)
+        print(f"disk AOB: pick={pick_count} gate={gate_count} post_update={post_update_count}")
+        if pick_count != 1 or gate_count != 1 or post_update_count != 1:
             return 2
     return 0
 
@@ -2672,6 +4771,7 @@ def run_diagnose() -> int:
                 for name, rva, signature in (
                     ("pick", PICK_RVA, PICK_SIGNATURE),
                     ("gate", GATE_RVA, GATE_SIGNATURE),
+                    ("post_update", MAIN_LOOP_RELOAD_HOOK_RVA, MAIN_LOOP_RELOAD_HOOK_SIGNATURE),
                 ):
                     addr = module.base + rva
                     live = mem.read(addr, len(signature))
@@ -2693,6 +4793,15 @@ def run_diagnose() -> int:
     if backend.hook is not None:
         lines.append(f"owns_hook={backend.hook.owns_hook}")
         lines.append(f"remote_base=0x{backend.hook.remote_base:X}")
+        if "reload_status" in backend.hook.labels:
+            try:
+                requests, done, status = backend.reload_counters()
+                status_text = RELOAD_STATUS_MESSAGES.get(status, str(status))
+                lines.append(f"reload_requests={requests}")
+                lines.append(f"reload_done={done}")
+                lines.append(f"reload_status={status} {status_text}")
+            except Exception as exc:
+                lines.append(f"reload_probe_error={exc}")
         lines.append(f"player_ptr=0x{backend.player_ptr():X}")
         try:
             level = backend.current_level_state()
