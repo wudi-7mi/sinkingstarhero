@@ -27,7 +27,7 @@ APP_VERSION = "0.4.0"
 GITHUB_REPOSITORY_URL = "https://github.com/wudi-7mi/sinkingstarhero"
 PROCESS_NAME = "sinking_star.exe"
 WINDOW_WIDTH = 920
-WINDOW_HEIGHT = 760
+WINDOW_HEIGHT = 860
 WINDOW_MIN_WIDTH = 760
 WINDOW_MIN_HEIGHT = 560
 
